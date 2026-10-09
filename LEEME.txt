@@ -1,0 +1,580 @@
+SSR - Claro Ecuador | Módulo de Login (PHP + MySQL)
+===================================================
+
+INSTALACIÓN EN XAMPP
+--------------------
+1. Copia la carpeta "SSR_Claro" dentro de: C:\xampp\htdocs\
+2. Inicia Apache y MySQL desde el panel de XAMPP.
+3. Crea la base de datos "ssr_a365" y, desde phpMyAdmin (o la línea de
+   comandos de MySQL), importa EN ESTE ORDEN los scripts de sql/:
+     1. ssr_bd_completa.sql      (base y tablas principales)
+     2. actualizacion_bd.sql     (puntaje de CV y tablas de administración)
+     3. actualizacion_hu08.sql   (evaluaciones y banco de preguntas)
+     4. actualizacion_avance2.sql(ajuste del Avance 2)
+     5. seguridad_login.sql      (auditoría, bloqueo, cambio de clave y 2FA)
+     6. correo_smtp.sql          (configuración de correo e historial)
+     7. sesiones_activas.sql     (panel de sesiones activas)
+     8. areas_jefe.sql           (jefe responsable por área)
+     9. conectar_todo.sql        (portal público y tabla de entrevistas)
+4. Revisa las credenciales de conexión en: config/conexion.php
+   (por defecto XAMPP usa usuario "root" sin contraseña)
+5. Revisa config/sistema.php: la ruta de las herramientas de MySQL debe
+   apuntar a tu instalación (por defecto C:\xampp\mysql\bin\).
+6. Abre en el navegador: http://localhost/SSR_Claro/login.php
+
+USUARIOS DE PRUEBA (clave: admin123)
+-------------------------------------
+  admin       (Administrador)
+  supervisor  (Supervisor)
+  reclutador  (Reclutador)
+
+Los usuarios creados desde Administración → Usuarios (o importados por
+CSV) quedan con una contraseña temporal que se envía al correo personal
+configurado y deben cambiarla al ingresar (ver NUEVO más abajo).
+
+SEGURIDAD (RNF-02)
+------------------
+- Contraseñas guardadas con hash bcrypt (password_hash / password_verify).
+- Consultas preparadas (PDO) contra inyección SQL.
+- session_regenerate_id contra fijación de sesión.
+- Salida escapada con htmlspecialchars.
+
+ESTRUCTURA
+----------
+  login.php           -> vista del login (diseño A365)
+  procesar_login.php  -> valida credenciales y crea la sesión con rol
+  dashboard.php       -> panel protegido de ejemplo
+  logout.php          -> cierra la sesión
+  generar_hash.php    -> utilidad para hashear contraseñas nuevas
+  config/conexion.php -> conexión PDO a MySQL
+  assets/css/login.css-> estilos
+  assets/img/         -> logo A365
+  sql/                -> los 9 scripts de instalación (ver orden arriba)
+
+------------------------------------------------------------
+ACTUALIZACIÓN: Dashboard (Panel de Control)
+------------------------------------------------------------
+Tras iniciar sesión, el sistema redirige a dashboard.php (protegido).
+Nuevos archivos:
+  dashboard.php            -> Panel de Control General (KPIs, embudo,
+                              actividad reciente y vacantes recientes)
+  includes/guardia.php     -> valida la sesión en páginas protegidas
+  includes/layout_top.php  -> barra lateral + barra superior (reutilizable)
+  includes/layout_bottom.php-> cierre del layout + JS común
+  assets/css/dashboard.css -> estilos del panel
+
+NOTA: los números del dashboard son datos de demostración fijos.
+Cuando existan las tablas de requerimientos/candidatos se reemplazan
+por consultas reales (RF-06 avance, RF-08 indicadores).
+
+Los ítems del menú (Requerimientos, Candidatos, Kanban, etc.) apuntan
+a "#" por ahora; son los siguientes módulos a construir.
+
+------------------------------------------------------------
+ACTUALIZACIÓN: Módulo Candidatos
+------------------------------------------------------------
+Nuevos/actualizados:
+  candidatos.php            -> Gestión de Candidatos (KPIs, filtros,
+                               tabla, donut por etapa, fuentes,
+                               acciones rápidas)
+  assets/css/candidatos.css -> estilos del módulo
+  includes/layout_top.php   -> ahora soporta $estilosExtra (CSS por página)
+                               y el menú "Candidatos" ya enlaza a candidatos.php
+
+Cómo agregar CSS propio a una página:
+  <?php $tituloPagina='...'; $activo='candidatos';
+        $estilosExtra=['assets/css/candidatos.css'];
+        require __DIR__.'/includes/layout_top.php'; ?>
+
+NOTA: los datos de candidatos son de demostración fijos. Se
+reemplazan por consultas reales cuando exista la tabla de
+candidatos (RF-03 registro, RF-04 etapa, RF-07 búsqueda/filtros).
+
+------------------------------------------------------------
+ACTUALIZACIÓN: Módulos Requerimientos/Vacantes y Entrevistas
+------------------------------------------------------------
+Nuevos:
+  requerimientos.php          -> Requerimientos / Vacantes
+  assets/css/requerimientos.css
+  entrevistas.php             -> Entrevistas
+  assets/css/entrevistas.css
+El menú lateral ya enlaza ambos módulos.
+Reutilizan candidatos.css como base (KPIs, filtros, tabla, chips).
+
+NOTA: datos de demostración fijos. Se conectan a la base con:
+  - RF-02 (registro de requerimientos), RF-05 (publicar vacantes)
+  - RF-04 (seguimiento por etapa / programación de entrevistas)
+
+------------------------------------------------------------
+ACTUALIZACIÓN: Módulos Reportes y Usuarios
+------------------------------------------------------------
+Nuevos:
+  reportes.php + assets/css/reportes.css
+     -> KPIs, 2 donuts, embudo, barras por fuente,
+        gráfica de líneas multi-serie y resumen general
+        (todas las gráficas dibujadas en SVG, sin librerías).
+  usuarios.php + assets/css/usuarios.css
+     -> KPIs, filtros, tabla de usuarios con rol/estado,
+        panel de Gestión de Accesos y Acciones Rápidas.
+
+Con esto el menú lateral queda completo:
+  Dashboard, Requerimientos/Vacantes, Candidatos, Kanban(*),
+  Entrevistas, Reportes, Usuarios.
+(*) Kanban es el único que aún apunta a "#".
+
+NOTA: datos de demostración fijos.
+  - Reportes -> RF-08 (indicadores y reportes).
+  - Usuarios -> RF-09 (gestión de usuarios y roles). La tabla se
+    llena desde la tabla "usuarios" real cuando se conecte.
+
+------------------------------------------------------------
+ACTUALIZACIÓN: Módulo Kanban (¡menú completo!)
+------------------------------------------------------------
+Nuevos:
+  kanban.php + assets/css/kanban.css
+     -> Tablero de 6 columnas (Postulación, Filtro CV,
+        Entrevista RRHH, Entrevista Técnica, Oferta, Contratado)
+        con tarjetas de candidatos, puntaje, resumen del flujo
+        y actividad reciente.
+     -> ARRASTRAR Y SOLTAR nativo (sin librerías): puedes mover
+        tarjetas entre etapas y los contadores se ajustan solos.
+
+Con esto TODOS los ítems del menú tienen su vista:
+  Dashboard, Requerimientos/Vacantes, Candidatos, Kanban,
+  Entrevistas, Reportes, Usuarios.
+
+NOTA: datos de demostración fijos. El Kanban corresponde al RF-04
+(seguimiento del candidato por etapa). Al conectar, mover una
+tarjeta actualizaría la etapa del candidato en la base de datos.
+
+------------------------------------------------------------
+LIMPIEZA VISUAL (reducción de redundancias)
+------------------------------------------------------------
+- Kanban fusionado con Candidatos: se quitó "Kanban" del menú.
+  Candidatos ahora tiene un toggle Lista/Tablero:
+     Lista   -> candidatos.php
+     Tablero -> kanban.php  (ambos resaltan "Candidatos" en el menú)
+- Dashboard: se quitó el embudo (vive en Reportes). Ahora muestra
+  Vacantes Recientes + Actividad reciente lado a lado.
+- Candidatos: se quitaron los paneles "Resumen por Etapa" y
+  "Fuentes de Candidatos" (duplicaban Reportes). Queda Acciones Rápidas.
+- Kanban: se quitó el bloque inferior "Resumen del Flujo" +
+  "Actividad Reciente" (duplicaba Dashboard).
+- Entrevistas: la columna "Tipo (Presencial/Virtual)" se cambió por
+  "Sala / Ubicación", porque todas las entrevistas son presenciales.
+
+PENDIENTE (decisión de datos, no visual):
+  Unificar la lista de roles. La base define 3 (administrador,
+  responsable, reclutador) pero la vista Usuarios muestra 5
+  (Administrador, Gerente, Entrevistador, Reclutador...). Hay que
+  dejar una sola lista antes de conectar el RF-01/RF-09.
+
+------------------------------------------------------------
+NUEVO: Módulo Organigrama
+------------------------------------------------------------
+Nuevos:
+  organigrama.php + assets/css/organigrama.css
+     -> Estructura organizacional por área en árbol colapsable
+        (clic para expandir/contraer nodos y grupos), KPIs,
+        filtros, donut "Resumen por área", personal por estado
+        y tarjeta "Editar Organigrama".
+El menú lateral ahora incluye "Organigrama" (entre Reportes y Usuarios).
+
+NOTA: se integró en el mismo layout claro actual (no en la barra
+oscura del mockup) para mantener coherencia con el resto del sistema.
+Datos de demostración fijos; al conectar saldría de tablas de
+áreas / cargos / personal.
+
+------------------------------------------------------------
+NUEVO: Portal público de empleos (carpeta /portal)
+------------------------------------------------------------
+Sitio público (SIN barra lateral, cara externa con marca A365),
+inspirado en el flujo de evaluar.com:
+
+  portal/index.php        -> Bolsa de Trabajo (hero + filtros + tarjetas)
+  portal/trabajo.php?id=N -> Detalle del puesto (tareas, requisitos,
+                             beneficios, habilidades, "Vista general"
+                             y botón Postularme) + stepper del proceso
+  portal/postular.php?id=N-> Registro del postulante (correo + contraseña),
+                             inicio del flujo de postulación
+  portal/seguimiento.php  -> Consulta del estado por código / cuenta,
+                             con línea de tiempo de etapas
+  portal/datos_empleos.php-> datos de empleos DEMO (se reemplazará por
+                             los requerimientos "publicados" de la BD)
+  portal/assets/portal.css-> estilos del portal
+
+Acceso local:  http://localhost/SSR_Claro/portal/
+
+FLUJO PREVISTO (a conectar con la BD):
+  Postular -> registro correo+clave temporal -> datos + carga CV ->
+  (interno) análisis de CV por palabras clave del área ->
+  test de 20 preguntas por área -> (interno) calificación ->
+  el reclutador (según su área) revisa y decide ->
+  el postulante ve su etapa actual en "seguimiento".
+
+Todo el portal es de solo diseño por ahora (los formularios no guardan);
+requiere conectar la base de datos para funcionar.
+
+------------------------------------------------------------
+NUEVO: Base de datos UNIFICADA (SARA + EVALUAR)
+------------------------------------------------------------
+Archivo: sql/ssr_bd_completa.sql   (base: ssr_a365)
+
+Reemplaza al esquema anterior (sql/ssr_claro.sql, que era solo login).
+Importar en phpMyAdmin o MySQL Workbench.
+
+16 tablas:
+  CATÁLOGOS: areas, roles, origenes, etapas, motivos_descarte
+  USUARIOS:  usuarios (con rol_id y area_id asignada)
+  SARA:      campanas, blacklist, postulantes (por DNI),
+             postulaciones, historial_etapas
+  EVALUAR:   evaluaciones, preguntas, opciones,
+             resultados_eval, respuestas
+
+Piezas clave del diseño:
+  - postulantes se identifica por DNI (único).
+  - postulaciones = postulante + campaña + etapa actual + reclutador
+    + origen + código de seguimiento.
+  - historial_etapas guarda cada movimiento con su MOTIVO de descarte
+    (obligatorio si es descarte) -> alimenta el embudo de Reportes.
+  - motivos_descarte están ligados a la etapa donde ocurren.
+  - resultados_eval liga la nota del test a la POSTULACIÓN (une SARA+EVALUAR):
+    al aprobar/reprobar, mueve o descarta la etapa automáticamente.
+  - usuarios.area_id permite que cada reclutador vea solo su campaña.
+
+Etapas del embudo (flujo real A365):
+  Postulación -> Validación (SARA) -> Contacto telefónico ->
+  Entrevista/Role Play -> Acepta propuesta -> Evaluación (test) ->
+  Antecedentes -> Ingresa
+
+Usuarios de prueba (clave: admin123):
+  admin (Administrador), lais (Coordinadora), mateo (Supervisor),
+  mrecluta (Reclutador)
+
+Datos semilla incluidos: 5 áreas, 6 roles, 7 orígenes, 8 etapas,
+15 motivos de descarte, 1 campaña publicada y 1 evaluación de ejemplo.
+
+Validado: 30 sentencias SQL parseadas OK, paréntesis de código
+balanceados (157/157).
+
+------------------------------------------------------------
+CONEXIÓN REAL: Login conectado a la base ssr_a365
+------------------------------------------------------------
+- config/conexion.php ahora apunta a la base "ssr_a365".
+- procesar_login.php lee de la tabla usuarios REAL, con JOIN a
+  roles y areas. Guarda en sesión: usuario_id, usuario_nombre,
+  usuario_rol, usuario_rol_id, usuario_area, usuario_area_id.
+  También registra ultimo_acceso.
+
+Probar el login con (clave: admin123):
+  admin    -> Administrador (sin área)
+  lais     -> Coordinador (Atención al Cliente)
+  mateo    -> Supervisor (Atención al Cliente)
+  mrecluta -> Reclutador (Atención al Cliente)
+
+El resto de módulos (dashboard, candidatos, etc.) siguen mostrando
+datos de demostración; se conectan en los próximos pasos.
+
+------------------------------------------------------------
+CONEXIÓN REAL: Módulo Usuarios (RF-09) conectado a la BD
+------------------------------------------------------------
+usuarios.php ahora:
+  - Lista los usuarios REALES desde la base (JOIN roles + areas).
+  - KPIs calculados de verdad (total, activos, inactivos, roles).
+  - Filtro de Rol poblado con los roles reales.
+  - Botón "Agregar Usuario" abre un modal con formulario
+    (nombre, usuario, correo, rol, área, contraseña, estado).
+
+guardar_usuario.php (NUEVO):
+  - Crea el usuario en la base con la contraseña ENCRIPTADA
+    (password_hash), valida campos y usuario duplicado.
+  - Solo un Administrador puede crear usuarios.
+  - Muestra mensaje de éxito/error al volver a usuarios.php.
+
+Probar: entra como "admin" (clave admin123) -> Usuarios ->
+Agregar Usuario -> completa y Guardar. El nuevo usuario aparece
+en la tabla y ya puede iniciar sesión.
+
+Nota: Editar / Ver / eliminar usuarios y los filtros funcionales
+quedan como siguiente iteración de este módulo.
+
+------------------------------------------------------------
+AJUSTES DE INTERFAZ (aplican a TODAS las vistas)
+------------------------------------------------------------
+- Se ELIMINÓ el buscador global de la barra superior (era
+  redundante con el buscador de cada módulo). Cambio hecho en
+  includes/layout_top.php -> afecta a todas las páginas.
+- Interfaz COMPACTADA para que quepa mejor al 100% del navegador:
+  barra lateral más angosta (216px), menos padding en el área
+  principal y la barra superior, KPIs y tarjetas más pequeños,
+  números de KPI reducidos. Cambios en dashboard.css y
+  candidatos.css (hojas compartidas).
+
+------------------------------------------------------------
+NÚCLEO: Registro de postulantes por DNI (tipo SARA)
+------------------------------------------------------------
+candidatos.php ahora:
+  - Lista las POSTULACIONES reales (postulante + campaña + etapa).
+  - KPIs calculados (total, en proceso, seleccionados, descartados).
+  - Chip de etapa con el color propio de cada etapa.
+  - Botón "Registrar Candidato" abre un modal (registro por DNI).
+
+registrar_postulante.php (NUEVO) valida en este orden:
+  1) DNI con formato correcto (8-15 dígitos).
+  2) BLACKLIST: si el DNI está en lista negra -> rechaza.
+  3) Postulante: si ya existe (por DNI) lo reutiliza; si no, lo crea.
+  4) ACTIVO EN OTRA CAMPAÑA: si ya tiene postulación En Proceso en
+     otra campaña -> rechaza (regla SARA).
+  5) DUPLICADO: si ya postuló a ESTA campaña -> rechaza.
+  6) Crea la postulación en etapa "Postulación", con código de
+     seguimiento (A365-XXXXX) y primer registro en historial_etapas.
+
+Probar: Candidatos -> Registrar Candidato -> DNI + nombres +
+campaña -> "Registrar y validar". Aparece en la tabla con su
+código de seguimiento. Repite el mismo DNI/campaña para ver la
+validación de duplicado.
+
+Datos base: la BD trae 1 campaña (REQ-2026-001). Para probar la
+blacklist, inserta un DNI en la tabla blacklist desde phpMyAdmin.
+
+------------------------------------------------------------
+BD ALINEADA AL INFORME + HU-03 y HU-04 conectados
+------------------------------------------------------------
+BASE DE DATOS (sql/ssr_bd_completa.sql) actualizada:
+  - Roles reducidos a 3: Administrador, Supervisor, Reclutador.
+  - Usuarios de prueba (clave admin123): admin, supervisor, reclutador.
+  - Nueva tabla "palabras_clave" (por área) para evaluar el CV (HU-05).
+  *** REIMPORTAR este .sql en phpMyAdmin ***
+
+HU-03 Registrar requerimientos (RF-03):
+  requerimientos.php -> lista real desde la BD + KPIs calculados.
+  Botón "Nuevo Requerimiento" abre modal con todos los campos
+  (cargo, área, vacantes, tipo, prioridad, ubicación, horario,
+  remuneración, fecha, y opción "Publicar vacante").
+  guardar_requerimiento.php (NUEVO): genera código REQ-AAAA-NNN,
+  valida y guarda. Solo Administrador y Supervisor.
+
+HU-04 Registrar candidato y su CV (RF-04):
+  candidatos.php -> el modal ahora acepta CARGA DE CV (PDF/DOC/DOCX).
+  registrar_postulante.php -> valida tipo/tamaño del CV (máx 5MB),
+  lo guarda en uploads/cv/ y asocia su ruta al postulante.
+  (Sigue aplicando las validaciones SARA: DNI, blacklist, duplicados.)
+
+IMPORTANTE: la carpeta uploads/cv/ debe tener permisos de escritura.
+
+Probar:
+  - supervisor / admin -> Requerimientos -> Nuevo Requerimiento.
+  - cualquiera -> Candidatos -> Registrar Candidato -> adjuntar CV.
+
+------------------------------------------------------------
+NUEVO: Módulo Administración (Usuarios + Mantenimiento)
+------------------------------------------------------------
+Solo visible para el Administrador. El menú "Usuarios" ahora es
+"Administración" con dos sub-pestañas: Usuarios y Mantenimiento.
+
+BD: 3 tablas nuevas -> historial_backups, historial_restauraciones,
+    versiones_sistema (+ versión inicial 1.0.0 sembrada).
+    *** REIMPORTAR sql/ssr_bd_completa.sql ***
+
+Config: config/sistema.php (ajusta RUTA_MYSQL_BIN si tu XAMPP no está
+        en C:\xampp\mysql\bin\). Carpeta backups/ para los respaldos.
+
+Mantenimiento (mantenimiento.php):
+  - Backup (hacer_backup.php): genera .sql con mysqldump, lo registra
+    y lo descarga.
+  - Restaurar (restaurar_bd.php): valida .sql, hace respaldo AUTOMÁTICO
+    previo, restaura con mysql, registra en historial (con doble
+    confirmación en pantalla).
+  - Versión/Actualización (actualizar_version.php): sube un .zip,
+    respalda el código actual, reemplaza archivos (conserva uploads/
+    y config/), y registra la versión con changelog, fecha y hora.
+
+IMPORTANTE (riesgo): restaurar y actualizar son acciones delicadas.
+Probar SIEMPRE con datos de prueba, nunca sobre datos reales.
+Requiere que exec() esté habilitado en PHP y las rutas de MySQL
+correctas en config/sistema.php.
+
+------------------------------------------------------------
+HU-05: Evaluación del CV por palabras clave (RF-05)
+------------------------------------------------------------
+BD: postulaciones tiene 2 columnas nuevas -> puntaje_cv, cv_detalle.
+    *** REIMPORTAR sql/ssr_bd_completa.sql ***
+
+includes/evaluar_cv.php (NUEVO):
+  - extraerTextoCV(): lee el texto de PDF, DOCX o TXT.
+      (DOCX y TXT: fiable. PDF: funciona con la mayoría; los .doc
+       antiguos binarios no son soportados de forma fiable.)
+  - evaluarCV(): compara el texto con las palabras_clave del área
+      de la campaña y calcula un puntaje ponderado (0-100%).
+
+registrar_postulante.php: al registrar un candidato con CV, el
+  sistema lo evalúa automáticamente y guarda el puntaje + las
+  palabras encontradas. El mensaje de éxito muestra el puntaje.
+
+candidatos.php: nueva columna "CV" con el puntaje por color
+  (verde >=70, ámbar 40-69, rojo <40). Es un valor de referencia
+  interno para el reclutador; no descarta automáticamente.
+
+Las palabras clave por área se cargan en la tabla palabras_clave
+(la BD ya trae ejemplos para ATC, Ventas y Técnica).
+
+------------------------------------------------------------
+HU-06: Mover candidatos entre etapas (RF-06)
+------------------------------------------------------------
+kanban.php: ahora lee las etapas y los candidatos REALES de la BD
+  (columnas = etapas del embudo; tarjetas = postulaciones En Proceso).
+mover_etapa.php (NUEVO): al arrastrar una tarjeta a otra columna,
+  actualiza postulaciones.etapa_id y registra en historial_etapas
+  (etapa origen, destino, usuario y fecha/hora). Responde por AJAX.
+Si el servidor rechaza el cambio, la tarjeta vuelve a su lugar.
+
+------------------------------------------------------------
+HU-06: Actualizar etapa del candidato (RF-06)
+------------------------------------------------------------
+NO requiere tablas nuevas (usa postulaciones, historial_etapas,
+etapas y motivos_descarte que ya existen).
+
+candidatos.php: cada fila tiene un botón "Cambiar etapa" (flecha)
+que abre un modal para:
+  - Avanzar / cambiar de etapa (elige la nueva etapa).
+  - Descartar candidato (exige MOTIVO de descarte — adelanta HU-07).
+  - Observación opcional del reclutador.
+
+mover_etapa.php (NUEVO): actualiza postulaciones.etapa_id (o estado
+'Descartado'/'Seleccionado' según corresponda) y registra en
+historial_etapas la etapa origen/destino, el motivo, la observación,
+el usuario y la fecha/hora automáticamente.
+
+Al llegar a la última etapa (Ingresa) el estado pasa a 'Seleccionado'.
+
+------------------------------------------------------------
+HU-10: Dashboard conectado a datos reales
+------------------------------------------------------------
+dashboard.php ahora lee todo de la base (no requiere SQL nuevo):
+  - KPIs: Vacantes Activas, Candidatos en Proceso, Tasa de Selección
+    y Tasa de Descarte (calculados en vivo).
+  - Vacantes Recientes: campañas con su conteo real de candidatos.
+  - Actividad Reciente: se arma desde historial_etapas (registros,
+    cambios de etapa y descartes con su motivo).
+  - Botones "Nuevo Requerimiento" y "Registrar Candidato" enlazan
+    a sus módulos.
+
+------------------------------------------------------------
+HU-12: Reportes conectado a datos reales (RF-13)
+------------------------------------------------------------
+reportes.php ahora calcula TODO desde la base (no requiere SQL nuevo):
+  - KPIs: Requerimientos, Candidatos, En Proceso, Seleccionados,
+    Tasa de Selección.
+  - EMBUDO "Candidatos por Etapa": cuántos candidatos alcanzaron cada
+    etapa (desde historial_etapas) con su % -> muestra DÓNDE se pierden.
+  - "Motivos de Descarte": barras con los motivos reales y su % ->
+    muestra POR QUÉ se pierden (el corazón de la problemática).
+  - Donuts: Requerimientos por Estado y Candidatos por Estado.
+  - "Evolución de Actividad": candidatos registrados por día (8 días).
+  - Resumen General: candidatos por requerimiento, tasa de selección,
+    tasa de descarte y total descartados.
+La gráfica de líneas ahora escala automáticamente a los datos.
+
+------------------------------------------------------------
+HU-09: Búsqueda y filtros funcionales (RF-11)
+------------------------------------------------------------
+candidatos.php: la barra de filtros ahora es un formulario (GET) que
+sí filtra la tabla desde la base:
+  - Buscar por nombre, DNI, correo o teléfono.
+  - Filtrar por Vacante, Etapa y Estado (combinables).
+  - Botón "Limpiar" resetea los filtros.
+  - Los selects conservan lo seleccionado tras filtrar.
+  - Si no hay resultados, muestra un mensaje claro (CA04).
+Los KPIs (Total, En Proceso, Seleccionados, Descartados) siempre
+reflejan el total global; la tabla y la paginación reflejan el filtro.
+No requiere cambios de base de datos.
+
+------------------------------------------------------------
+HU-11: Supervisar al equipo de reclutadores (+ corrección de errores)
+------------------------------------------------------------
+candidatos.php (no requiere SQL nuevo):
+  - Reclutador: ve SOLO sus candidatos (y sus propios KPIs).
+  - Supervisor / Administrador: ven a todo el equipo, con filtro
+    "Reclutador", el reclutador asignado en cada fila y el panel
+    "Carga del equipo" (en proceso / seleccionados / descartados).
+
+CORRECCIONES IMPORTANTES:
+  - Búsqueda de HU-09: usaba el parámetro :b repetido, lo que en
+    MySQL con consultas preparadas nativas produce
+    "Invalid parameter number". Corregido (:b1..:b4).
+  - mover_etapa.php: al DESCARTAR usaba :o repetido (mismo error).
+    Corregido. Se revisó todo el proyecto: 0 casos restantes.
+
+------------------------------------------------------------
+HU-08: Evaluación por área con calificación automática (RF-09)
++ CORRECCIONES DETECTADAS AL PROBAR CON PHP Y MARIADB REALES
+------------------------------------------------------------
+*** EJECUTAR UNA VEZ: sql/actualizacion_hu08.sql (phpMyAdmin > SQL) ***
+    Seguro de repetir. Crea las evaluaciones de ATC, Ventas y Técnica,
+    carga 40 preguntas iniciales y repara tildes si la base las tuviera
+    corruptas.
+
+Nuevos archivos:
+  banco_preguntas.php     -> menú "Evaluaciones" (Admin y Supervisor):
+                             configura por área nota mínima, tiempo y
+                             N.º de preguntas; agrega/elimina preguntas.
+  guardar_pregunta.php    -> acciones del banco (con validaciones).
+  rendir_evaluacion.php   -> el candidato rinde la prueba: preguntas al
+                             azar, cronómetro con envío automático; si ya
+                             rindió, muestra el resultado y el detalle.
+  calificar_evaluacion.php-> califica EN EL SERVIDOR (las respuestas
+                             correctas nunca llegan al navegador).
+                             Aprobado -> etapa "Evaluación (test)".
+                             No aprobado -> Descartado con el motivo
+                             "No alcanzó el puntaje mínimo (70%)".
+  assets/css/evaluaciones.css
+candidatos.php: botón de evaluación en cada fila y "Test X%" bajo el CV.
+
+CORRECCIONES:
+  - guardar_requerimiento: fallaba con "Data truncated for column tipo"
+    cuando la base se importó sin UTF-8 (tildes corruptas). Los .sql ahora
+    fuerzan SET NAMES utf8mb4 y actualizacion_hu08.sql repara la base.
+  - Lectura de CV DOCX: ya no depende de la extensión zip de PHP (en
+    XAMPP suele venir desactivada y causaba error fatal).
+  - Lectura de CV PDF: los PDF de Word/LibreOffice guardan el texto
+    codificado (ToUnicode); antes devolvía vacío. Ahora se decodifica.
+    Probado con PDF de LibreOffice, Chrome, ReportLab y DOCX.
+  - Actualizar versión: si falta la extensión zip muestra cómo activarla
+    (php.ini -> quitar ";" de ";extension=zip" y reiniciar Apache).
+Todo el sistema fue probado con PHP 8.3 + MariaDB 10.11 (22 pantallas,
+3 roles, flujos de registro, etapas, descarte y evaluación).
+
+------------------------------------------------------------
+NUEVO: Seguridad y administración (cierra RNF-02 pendiente)
+------------------------------------------------------------
+*** EJECUTAR: sql/seguridad_login.sql, correo_smtp.sql, sesiones_activas.sql,
+    areas_jefe.sql y conectar_todo.sql (en ese orden, ver INSTALACIÓN) ***
+
+- Cambio obligatorio de contraseña temporal: al crear un usuario o
+  regenerarle la clave (Administración -> Usuarios), queda marcado con
+  debe_cambiar_clave=1 y guardia.php lo redirige a cambiar_clave.php
+  hasta que la cambie.
+- Bloqueo por fuerza bruta: 3 fallos de un mismo usuario o IP en 15
+  minutos bloquean el acceso temporalmente (registrado en intentos_login).
+- Verificación en dos pasos (2FA/TOTP) para el Administrador: se activa
+  en dos_factores.php (RFC 6238, sin librerías externas).
+- Sesiones activas: Administración -> Usuarios -> "Sesiones Activas"
+  muestra quién está conectado y permite cerrar la sesión de otro
+  usuario a distancia (cerrar_sesion_usuario.php).
+- Importar usuarios por CSV: Administración -> Usuarios -> "Importar
+  Usuarios" (importar_usuarios.php). Columnas: nombre, usuario, correo,
+  rol (y area opcional). El usuario de acceso se arma como
+  cuenta@dominio (el dominio se configura en Administración -> Correo).
+- Correo SMTP: Administración -> Correo (guardar_correo.php) configura
+  el servidor; las credenciales y contraseñas temporales se envían al
+  correo personal y quedan registradas en correos_enviados.
+- Jefe responsable por área: Organigrama permite editar el nombre del
+  jefe de cada área (guardar_area_jefe.php), solo Administrador.
+
+IMPORTANTE: corregido un error real detectado en las pruebas de este
+Avance 2 -> el respaldo de código previo a cada actualización de
+versión (actualizar_version.php) no excluía correctamente la carpeta
+backups/ por una comparación de rutas sin normalizar, y crecía sin
+control (superó 600 MB en las pruebas). Ya corregido con realpath();
+revisa el tamaño de backups/ si vienes de una copia anterior del
+proyecto.

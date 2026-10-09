@@ -1,0 +1,21 @@
+/* ============================================================
+   SSR - Claro Ecuador | Estilos del módulo Requerimientos/Vacantes
+   (se carga junto con dashboard.css y candidatos.css)
+   ============================================================ */
+
+/* La tabla ocupa todo el ancho (sin panel lateral) */
+.tabla-cargo{font-size:13.5px}
+.cargo-cel .titulo{font-size:14px;font-weight:600;color:var(--texto);line-height:1.3}
+.cargo-cel .desc{font-size:12.5px;color:var(--texto-3);margin-top:2px;max-width:260px}
+.codigo{font-weight:600;color:var(--texto-2);font-size:13.5px}
+.vacantes-num{font-weight:700;color:var(--texto);text-align:center}
+
+/* Chips propios de requerimientos */
+.est-abierto{background:var(--verde-suave);color:var(--verde)}
+.est-enproceso{background:#eaf1fd;color:var(--azul)}
+.est-cerrado{background:#eef1f5;color:var(--texto-2)}
+.tipo-nueva{background:#eaf1fd;color:var(--azul)}
+.tipo-reemplazo{background:#fff4e5;color:#d98a1a}
+.prio-alta{background:#fdecec;color:var(--rojo)}
+.prio-media{background:#fff4e5;color:#d98a1a}
+.prio-baja{background:var(--verde-suave);color:var(--verde)}

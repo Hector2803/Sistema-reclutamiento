@@ -1,0 +1,80 @@
+/* ============================================================
+   SSR - Claro Ecuador | Estilos del módulo Reportes
+   (se carga junto con dashboard.css)
+   ============================================================ */
+
+/* Barra de rango de fechas + exportar */
+.rango-fecha{display:inline-flex;align-items:center;gap:10px;border:1px solid var(--borde);background:#fff;border-radius:11px;padding:11px 16px;font-size:14px;color:var(--texto-2);cursor:pointer}
+.rango-fecha svg{width:17px;height:17px;color:var(--texto-3)}
+.rango-fecha .chev{width:14px;height:14px;margin-left:2px}
+
+/* KPIs (5) con delta */
+.rep-kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:20px}
+.rep-kpi{background:#fff;border:1px solid var(--borde);border-radius:var(--radio);box-shadow:var(--sombra);padding:18px 20px}
+.rep-kpi .cab{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.rep-kpi .ic{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.rep-kpi .ic svg{width:21px;height:21px}
+.rep-kpi .ic.azul{background:#eaf1fd;color:var(--azul)}
+.rep-kpi .ic.verde{background:var(--verde-suave);color:var(--verde)}
+.rep-kpi .ic.morado{background:#f0eafc;color:#7c4ddb}
+.rep-kpi .ic.ambar{background:#fff4e5;color:#d98a1a}
+.rep-kpi .ic.cian{background:#e6f7f4;color:#0f9b8e}
+.rep-kpi .titulo{font-size:13px;color:var(--texto-2);font-weight:600;line-height:1.25}
+.rep-kpi .num{font-size:28px;font-weight:800;color:var(--texto);line-height:1}
+.rep-kpi .delta{font-size:12px;color:var(--verde);font-weight:600;margin-top:8px}
+.rep-kpi .delta span{color:var(--texto-3);font-weight:500}
+
+/* Rejillas de 3 columnas */
+.rep-fila3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-bottom:20px}
+
+/* Donut con total al centro */
+.donut-wrap{display:flex;align-items:center;gap:14px}
+.donut-box{position:relative;width:132px;height:132px;flex-shrink:0}
+.donut-box svg{width:132px;height:132px}
+.donut-centro{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.donut-centro .n{font-size:26px;font-weight:800;color:var(--texto);line-height:1}
+.donut-centro .t{font-size:12px;color:var(--texto-3)}
+.donut-leyenda2{flex:1;display:flex;flex-direction:column;gap:11px}
+.leyenda-item2{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--texto-2)}
+.leyenda-item2 .punto{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.leyenda-item2 .et{flex:1}
+.leyenda-item2 .vv{color:var(--texto-3);font-weight:600}
+
+/* Embudo centrado (reportes) */
+.funnel{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center}
+.funnel-graf{display:flex;flex-direction:column;align-items:center;gap:3px;width:150px}
+.funnel-seg{height:26px;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;clip-path:polygon(6% 0,94% 0,86% 100%,14% 100%)}
+.funnel-lista{display:flex;flex-direction:column;gap:9px}
+.funnel-lista .fl{display:flex;justify-content:space-between;font-size:13px}
+.funnel-lista .fl .nom{color:var(--texto-2)}
+.funnel-lista .fl .val{color:var(--texto);font-weight:600}
+.funnel-lista .fl .val em{font-style:normal;color:var(--texto-3);font-weight:500}
+
+/* Barras horizontales */
+.rep-fuente{margin-bottom:14px}
+.rep-fuente .top{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px}
+.rep-fuente .nom{color:var(--texto-2)}
+.rep-fuente .pc{color:var(--texto);font-weight:700}
+.rep-barra{height:8px;background:var(--fondo);border-radius:6px;overflow:hidden}
+.rep-barra > div{height:100%;background:linear-gradient(90deg,var(--azul-claro),var(--azul));border-radius:6px}
+
+/* Gráfica de líneas */
+.linea-cab{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:12px}
+.linea-leyenda{display:flex;gap:16px;flex-wrap:wrap}
+.linea-leyenda span{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--texto-2)}
+.linea-leyenda .pt{width:9px;height:9px;border-radius:50%}
+.grafica-lineas{width:100%;height:230px}
+
+/* Resumen general */
+.resumen-item{display:flex;align-items:center;gap:13px;padding:14px 0;border-bottom:1px solid var(--borde)}
+.resumen-item:last-child{border-bottom:none}
+.resumen-item .ri-ic{width:38px;height:38px;border-radius:10px;background:#eaf1fd;color:var(--azul);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.resumen-item .ri-ic svg{width:18px;height:18px}
+.resumen-item .ri-tx{flex:1;font-size:13.5px;color:var(--texto-2)}
+.resumen-item .ri-val{font-size:16px;font-weight:800;color:var(--texto)}
+
+@media (max-width:1150px){
+  .rep-kpis{grid-template-columns:repeat(2,1fr)}
+  .rep-fila3{grid-template-columns:1fr}
+}
+@media (max-width:640px){ .rep-kpis{grid-template-columns:1fr} }

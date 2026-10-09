@@ -1,0 +1,251 @@
+/* ============================================================
+   SSR - Claro Ecuador | Estilos del Login (Diseño A365)
+   ============================================================ */
+
+:root {
+  --azul: #0b3d91;
+  --azul-oscuro: #08306b;
+  --azul-hover: #0a367e;
+  --rojo: #e30613;
+  --gris-texto: #5b6472;
+  --gris-borde: #d9dee6;
+  --gris-suave: #f4f7fb;
+  --blanco: #ffffff;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eef2f8;
+  color: #1c2431;
+}
+
+/* ---------- Contenedor general ---------- */
+.contenedor-login {
+  display: flex;
+  width: 960px;
+  max-width: 95vw;
+  min-height: 620px;
+  background: var(--blanco);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(11, 61, 145, 0.18);
+}
+
+/* ---------- Panel izquierdo (branding) ---------- */
+.panel-izquierdo {
+  position: relative;
+  flex: 1;
+  padding: 48px 44px;
+  background:
+    radial-gradient(circle at 90% -10%, rgba(11,61,145,0.10), transparent 55%),
+    radial-gradient(circle at -10% 110%, rgba(227,6,19,0.10), transparent 55%),
+    linear-gradient(160deg, #f7faff 0%, #eaf1fb 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.panel-izquierdo::before {
+  content: "";
+  position: absolute;
+  top: -80px; right: -80px;
+  width: 260px; height: 260px;
+  background: var(--azul);
+  opacity: 0.12;
+  border-radius: 50%;
+}
+.panel-izquierdo::after {
+  content: "";
+  position: absolute;
+  bottom: -90px; left: -60px;
+  width: 220px; height: 220px;
+  background: var(--rojo);
+  opacity: 0.10;
+  border-radius: 50%;
+}
+
+.panel-izquierdo .logo-marca { width: 170px; margin-bottom: 34px; z-index: 1; }
+
+.panel-izquierdo h1 {
+  font-size: 34px;
+  line-height: 1.15;
+  color: #14315f;
+  font-weight: 400;
+  z-index: 1;
+}
+.panel-izquierdo h1 strong { display: block; font-weight: 800; color: var(--azul-oscuro); }
+
+.linea-roja {
+  width: 62px; height: 4px;
+  background: var(--rojo);
+  border-radius: 4px;
+  margin: 16px 0 20px;
+  z-index: 1;
+}
+
+.panel-izquierdo p.subtitulo {
+  color: var(--gris-texto);
+  font-size: 15px;
+  max-width: 300px;
+  line-height: 1.5;
+  z-index: 1;
+}
+
+.features {
+  display: flex;
+  gap: 26px;
+  margin-top: 48px;
+  z-index: 1;
+}
+.feature { display: flex; align-items: center; gap: 10px; }
+.feature svg { width: 24px; height: 24px; color: var(--azul); flex-shrink: 0; }
+.feature span { font-size: 13px; color: #33465f; line-height: 1.25; }
+
+/* ---------- Panel derecho (formulario) ---------- */
+.panel-derecho {
+  flex: 1;
+  padding: 54px 52px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.panel-derecho .logo-form { width: 130px; align-self: center; margin-bottom: 6px; }
+
+.panel-derecho h2 {
+  text-align: center;
+  font-size: 26px;
+  color: #14315f;
+  font-weight: 700;
+  margin-top: 6px;
+}
+.panel-derecho .instruccion {
+  text-align: center;
+  color: var(--gris-texto);
+  font-size: 14px;
+  margin: 6px 0 26px;
+}
+
+/* ---------- Alertas ---------- */
+.alerta {
+  padding: 11px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.alerta-error { background: #fdecec; color: #b5121b; border: 1px solid #f5c2c5; }
+.alerta-ok    { background: #e8f6ee; color: #1a7a44; border: 1px solid #b7e2c7; }
+
+/* ---------- Campos ---------- */
+.campo { margin-bottom: 18px; }
+.campo label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #2b3648;
+  margin-bottom: 7px;
+}
+
+.input-icono {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.input-icono .ico-izq {
+  position: absolute;
+  left: 13px;
+  width: 18px; height: 18px;
+  color: #9aa6b8;
+  pointer-events: none;
+}
+.input-icono input {
+  width: 100%;
+  padding: 12px 42px 12px 40px;
+  border: 1px solid var(--gris-borde);
+  border-radius: 9px;
+  font-size: 15px;
+  color: #1c2431;
+  background: var(--gris-suave);
+  transition: border-color .15s, background .15s, box-shadow .15s;
+}
+.input-icono input:focus {
+  outline: none;
+  border-color: var(--azul);
+  background: var(--blanco);
+  box-shadow: 0 0 0 3px rgba(11,61,145,0.12);
+}
+
+.btn-ojo {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #7c8798;
+  display: flex;
+  padding: 2px;
+}
+.btn-ojo svg { width: 19px; height: 19px; }
+
+/* ---------- Opciones (recordarme / olvidaste) ---------- */
+.fila-opciones {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 4px 0 22px;
+  font-size: 14px;
+}
+.recordarme { display: flex; align-items: center; gap: 8px; color: #3a4759; cursor: pointer; }
+.recordarme input { width: 16px; height: 16px; accent-color: var(--azul); cursor: pointer; }
+.enlace-olvido { color: var(--azul); text-decoration: none; font-weight: 600; }
+.enlace-olvido:hover { text-decoration: underline; }
+
+/* ---------- Botón ---------- */
+.btn-entrar {
+  width: 100%;
+  padding: 13px;
+  background: var(--azul);
+  color: var(--blanco);
+  border: none;
+  border-radius: 9px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s, transform .05s;
+}
+.btn-entrar:hover { background: var(--azul-hover); }
+.btn-entrar:active { transform: scale(0.99); }
+
+/* ---------- Pie seguro ---------- */
+.pie-seguro {
+  text-align: center;
+  margin-top: 26px;
+  font-size: 12.5px;
+  color: #9aa6b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.pie-seguro svg { width: 15px; height: 15px; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 820px) {
+  .contenedor-login { flex-direction: column; width: 440px; min-height: auto; }
+  .panel-izquierdo { display: none; }
+  .panel-derecho { padding: 40px 32px; }
+}
+@media (max-width: 480px) {
+  .contenedor-login { width: 100%; border-radius: 0; box-shadow: none; }
+  body { background: #fff; }
+}

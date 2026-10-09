@@ -1,0 +1,168 @@
+/* ============================================================
+   SSR - Claro Ecuador | Estilos del módulo Organigrama
+   (se carga junto con dashboard.css)
+   ============================================================ */
+
+/* Layout de dos columnas */
+.org-layout{display:grid;grid-template-columns:1fr 320px;gap:18px;align-items:start}
+
+/* KPIs */
+.org-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:16px}
+.org-kpi{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid var(--borde);border-radius:var(--radio);box-shadow:var(--sombra);padding:18px 20px}
+.org-kpi .ic{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.org-kpi .ic svg{width:23px;height:23px}
+.org-kpi .ic.azul{background:#eaf1fd;color:var(--azul)}
+.org-kpi .ic.cian{background:#e6f7f4;color:#0f9b8e}
+.org-kpi .ic.morado{background:#f0eafc;color:#7c4ddb}
+.org-kpi .ic.ambar{background:#fff4e5;color:#d98a1a}
+.org-kpi small{font-size:12.5px;color:var(--texto-2);font-weight:600;display:block}
+.org-kpi .num{font-size:26px;font-weight:800;color:var(--texto);line-height:1.1}
+
+/* Botón vista completa */
+.org-vista{display:flex;justify-content:flex-end;margin-bottom:14px}
+.org-vista button{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--borde);background:#fff;border-radius:10px;padding:9px 16px;font-size:13.5px;font-weight:600;color:var(--texto-2);cursor:pointer}
+.org-vista button svg{width:16px;height:16px}
+.org-vista button:hover{background:#f0f4fb}
+
+/* ---- Nodo colapsable genérico ---- */
+.nodo{background:#fff;border:1px solid var(--borde);border-radius:12px;margin-bottom:12px;box-shadow:var(--sombra)}
+.nodo-head{display:flex;align-items:center;gap:13px;padding:15px 18px;cursor:pointer;user-select:none}
+.nodo-head .chev{width:16px;height:16px;color:var(--texto-3);transition:transform .18s;flex-shrink:0}
+.nodo.abierto > .nodo-head .chev{transform:rotate(90deg)}
+.nodo-ic{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff}
+.nodo-ic svg{width:19px;height:19px}
+.nodo-tit{flex:1;min-width:0}
+.nodo-tit .n{font-size:14.5px;font-weight:700;color:var(--texto)}
+.nodo-tit .n em{font-style:normal;font-weight:400;color:var(--texto-3);font-size:13px}
+.badge-conteo{background:#eaf1fd;color:var(--azul);font-size:12px;font-weight:700;padding:4px 11px;border-radius:20px}
+.estado{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600}
+.estado .pt{width:8px;height:8px;border-radius:50%}
+.estado.ok{color:var(--verde)} .estado.ok .pt{background:var(--verde)}
+.chip-falta{background:#fff4e5;color:#d98a1a;font-size:11.5px;font-weight:700;padding:4px 11px;border-radius:20px}
+.chip-completo{background:var(--verde-suave);color:var(--verde);font-size:11.5px;font-weight:700;padding:4px 11px;border-radius:20px}
+.chip-sincubrir{background:#fdecec;color:var(--rojo);font-size:11.5px;font-weight:700;padding:4px 11px;border-radius:20px}
+
+.nodo-body{display:none;padding:0 18px 16px}
+.nodo.abierto > .nodo-body{display:block}
+
+/* Colores de icono por área */
+.ic-azul{background:#2f6fed}.ic-verde{background:#22a06b}.ic-ambar{background:#f5a623}
+.ic-rojo{background:#ef4444}.ic-morado{background:#7c4ddb}.ic-cian{background:#0ea5a4}
+
+/* Sub-columnas (coordinadores) */
+.org-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.subnodo{border:1px solid var(--borde);border-radius:11px;background:#fbfcfe}
+.subnodo .nodo-head{padding:13px 15px}
+.subnodo .nodo-body{padding:0 14px 14px}
+
+/* Fila de persona */
+.persona{display:flex;align-items:center;gap:11px;background:#fff;border:1px solid var(--borde);border-radius:9px;padding:10px 12px;margin-bottom:8px}
+.persona:last-child{margin-bottom:0}
+.persona .av{width:34px;height:34px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12.5px}
+.persona .datos{flex:1;min-width:0}
+.persona .datos .nm{font-size:13.5px;font-weight:600;color:var(--texto)}
+.persona .datos .cg{font-size:12px;color:var(--texto-3)}
+.persona .kebab{color:var(--texto-3);cursor:pointer}
+.persona .kebab svg{width:15px;height:15px}
+.persona.vacante{border-style:dashed;background:#fafbfe}
+.persona.vacante .av{background:#eef1f5;color:var(--texto-3);border:1px dashed var(--borde)}
+.persona.vacante .nm{color:var(--texto-3);font-weight:600}
+
+/* Grupo supervisores */
+.grupo{margin-top:10px;border:1px solid var(--borde);border-radius:10px;overflow:hidden}
+.grupo-head{display:flex;align-items:center;gap:10px;padding:11px 13px;background:#f4f7fc;cursor:pointer}
+.grupo-head .chev{width:15px;height:15px;color:var(--texto-3);transition:transform .18s}
+.grupo.abierto > .grupo-head .chev{transform:rotate(90deg)}
+.grupo-head .gic{color:var(--azul);display:flex}
+.grupo-head .gic svg{width:18px;height:18px}
+.grupo-head .gt{flex:1;font-size:13px;font-weight:600;color:var(--texto)}
+.grupo-body{display:none;padding:11px 13px}
+.grupo.abierto > .grupo-body{display:block}
+
+/* ---- Panel derecho ---- */
+.org-lat{display:flex;flex-direction:column;gap:18px}
+.org-lat .tarjeta h3{font-size:15px;display:flex;align-items:center;gap:8px}
+.org-lat .tarjeta h3 svg{width:17px;height:17px;color:var(--texto-3)}
+.filtro-b{margin-bottom:14px}
+.filtro-b label{display:block;font-size:12.5px;color:var(--texto-2);font-weight:600;margin-bottom:6px}
+.filtro-b select{width:100%;border:1px solid var(--borde);border-radius:9px;padding:10px 12px;font-size:14px;color:var(--texto-2);background:#fff;cursor:pointer}
+.btn-limpiar-f{width:100%;display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--borde);background:#fff;border-radius:9px;padding:10px;font-size:13.5px;font-weight:600;color:var(--texto-2);cursor:pointer;margin-top:2px}
+.btn-limpiar-f svg{width:15px;height:15px}
+.btn-limpiar-f:hover{background:#f0f4fb}
+
+/* Donut resumen */
+.org-donut{display:flex;align-items:center;gap:12px;margin-top:4px}
+.org-donut-box{position:relative;width:118px;height:118px;flex-shrink:0}
+.org-donut-box svg{width:118px;height:118px}
+.org-donut-centro{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.org-donut-centro .n{font-size:23px;font-weight:800;color:var(--texto);line-height:1}
+.org-donut-centro .t{font-size:11px;color:var(--texto-3)}
+.org-leyenda{flex:1;display:flex;flex-direction:column;gap:6px}
+.org-leyenda .it{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--texto-2)}
+.org-leyenda .pt{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.org-leyenda .et{flex:1}
+.org-leyenda .vv{color:var(--texto-3);font-weight:600}
+
+/* Personal por estado */
+.pe-item{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--borde)}
+.pe-item:last-child{border-bottom:none}
+.pe-item .pic{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pe-item .pic svg{width:17px;height:17px}
+.pe-item .pic.verde{background:var(--verde-suave);color:var(--verde)}
+.pe-item .pic.ambar{background:#fff4e5;color:#d98a1a}
+.pe-item .pic.rojo{background:#fdecec;color:var(--rojo)}
+.pe-item .et{flex:1;font-size:13.5px;color:var(--texto-2)}
+.pe-item .vv{font-weight:800;color:var(--texto);font-size:15px}
+.pe-item .vv span{font-size:12px;color:var(--texto-3);font-weight:500;margin-left:3px}
+
+/* Tarjeta info */
+.org-info{background:#eef4ff;border:1px solid #d5e3fb;border-radius:var(--radio);padding:18px}
+.org-info .cab{display:flex;gap:11px;margin-bottom:14px}
+.org-info .cab svg{width:22px;height:22px;color:var(--azul);flex-shrink:0}
+.org-info .cab strong{font-size:13.5px;color:var(--texto);display:block;margin-bottom:3px}
+.org-info .cab span{font-size:12.5px;color:var(--texto-2);line-height:1.4}
+.org-info .btn-editar{width:100%;display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--azul);color:#fff;border:none;border-radius:9px;padding:11px;font-size:14px;font-weight:700;cursor:pointer}
+.org-info .btn-editar svg{width:16px;height:16px}
+.org-info .btn-editar:hover{filter:brightness(1.06)}
+
+@media (max-width:1150px){
+  .org-layout{grid-template-columns:1fr}
+  .org-kpis{grid-template-columns:repeat(2,1fr)}
+  .org-cols{grid-template-columns:1fr}
+}
+@media (max-width:640px){ .org-kpis{grid-template-columns:1fr} }
+
+/* ===== Jefe responsable por �rea (editable) ===== */
+.jefe-lin{display:flex;align-items:center;gap:6px;margin-top:5px;font-size:12.5px;color:var(--texto-2)}
+.jefe-lin > svg{width:14px;height:14px;color:var(--texto-3);flex-shrink:0}
+.jefe-lin .jl-et{color:var(--texto-3);font-weight:600}
+.jefe-lin b{font-weight:700;color:var(--texto);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.jefe-lin b.sin-jefe{color:var(--texto-3);font-weight:600;font-style:italic}
+.btn-jefe{width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--borde);background:#fff;border-radius:8px;color:var(--texto-2);cursor:pointer;padding:0;transition:background .15s,color .15s,border-color .15s;flex-shrink:0}
+.btn-jefe:hover{background:var(--azul);color:#fff;border-color:var(--azul)}
+.btn-jefe svg{width:13px;height:13px}
+
+/* ===== Mensajes flash ===== */
+.aviso{padding:12px 16px;border-radius:10px;font-size:14px;font-weight:500;margin-bottom:16px}
+.aviso-ok{background:var(--verde-suave);color:var(--verde);border:1px solid #b7e2c7}
+.aviso-error{background:#fdecec;color:var(--rojo);border:1px solid #f5c2c5}
+
+/* ===== Modal de edici�n ===== */
+.modal-fondo{position:fixed;inset:0;background:rgba(16,28,54,.5);display:none;align-items:flex-start;justify-content:center;z-index:100;padding:60px 20px;overflow-y:auto}
+.modal-fondo.abierto{display:flex}
+.modal-caja{background:#fff;border-radius:16px;width:100%;max-width:440px;box-shadow:0 25px 70px rgba(0,0,0,.3);animation:subirOrg .18s ease}
+@keyframes subirOrg{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-cab{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:19px 24px;border-bottom:1px solid var(--borde)}
+.modal-cab h3{font-size:17px;color:var(--azul-osc);font-weight:700}
+.modal-x{background:none;border:none;cursor:pointer;color:var(--texto-3);display:flex;padding:4px;border-radius:7px}
+.modal-x:hover{background:#f0f4fb;color:var(--rojo)}
+.modal-x svg{width:20px;height:20px}
+.modal-form{padding:22px 24px}
+.mf-campo{margin-bottom:6px}
+.mf-campo label{display:block;font-size:13.5px;font-weight:600;color:#2b3648;margin-bottom:6px}
+.mf-campo input{box-sizing:border-box;width:100%;border:1px solid var(--borde);border-radius:9px;padding:11px 13px;font-size:14.5px;color:var(--texto);background:var(--fondo)}
+.mf-campo input:focus{outline:none;border-color:var(--azul);background:#fff;box-shadow:0 0 0 3px rgba(11,61,145,.12)}
+.mf-ayuda{display:block;font-size:12px;color:var(--texto-3);margin-top:5px}
+.modal-pie{display:flex;justify-content:flex-end;gap:10px;margin-top:16px;padding-top:16px;border-top:1px solid var(--borde)}
+.btn-sec{border:1px solid var(--borde);background:#fff;border-radius:9px;padding:10px 16px;font-size:14px;font-weight:600;color:var(--texto-2);cursor:pointer}
+.btn-sec:hover{background:#f5f7fb}

@@ -1,0 +1,26 @@
+/* ============================================================
+   SSR - Claro Ecuador | Estilos del módulo Entrevistas
+   (se carga junto con dashboard.css y candidatos.css)
+   ============================================================ */
+
+/* KPIs en 5 columnas */
+.grid-kpis-5{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:20px}
+
+/* Celda cargo/vacante con código REQ */
+.cargo-vac .titulo{font-size:13.5px;font-weight:600;color:var(--texto);line-height:1.3}
+.cargo-vac .req{font-size:12px;color:var(--texto-3);margin-top:2px}
+
+/* Entrevistador con rol */
+.entrevistador .nom{font-size:13.5px;font-weight:600;color:var(--texto)}
+.entrevistador .rol{font-size:12px;color:var(--texto-3)}
+
+/* Chips propios de entrevistas */
+.tipo-presencial{background:#eaf1fd;color:var(--azul)}
+.tipo-virtual{background:#f0eafc;color:#7c4ddb}
+.est-programada{background:#eaf1fd;color:var(--azul)}
+.est-encurso{background:#fff4e5;color:#d98a1a}
+.est-completada{background:var(--verde-suave);color:var(--verde)}
+.est-cancelada{background:#fdecec;color:var(--rojo)}
+
+@media (max-width:1150px){ .grid-kpis-5{grid-template-columns:repeat(2,1fr)} }
+@media (max-width:640px){ .grid-kpis-5{grid-template-columns:1fr} }

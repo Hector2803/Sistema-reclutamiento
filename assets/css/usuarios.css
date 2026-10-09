@@ -1,0 +1,237 @@
+/* ============================================================
+   SSR - Claro Ecuador | Estilos del módulo Usuarios
+   (se carga junto con dashboard.css y candidatos.css)
+   ============================================================ */
+
+/* Celda usuario: avatar + @usuario */
+.usuario-cel{display:flex;align-items:center;gap:11px}
+.usuario-cel .cand-avatar{width:36px;height:36px;font-size:13px}
+.usuario-cel .u{font-size:13.5px;color:var(--texto-2)}
+
+/* Chips de rol */
+.rol-administrador{background:#f0eafc;color:#7c4ddb}
+.rol-gerente{background:#eaf1fd;color:var(--azul)}
+.rol-entrevistador{background:#e6f7f4;color:#0f9b8e}
+.rol-reclutador{background:#fff4e5;color:#d98a1a}
+/* Estado */
+.es-activo{background:var(--verde-suave);color:var(--verde)}
+.es-inactivo{background:#fdecec;color:var(--rojo)}
+
+/* Panel derecho: lista de accesos (reutiliza look de accion-rapida) */
+.acceso-item{display:flex;align-items:center;gap:13px;padding:12px 0;border-bottom:1px solid var(--borde);cursor:default}
+.acceso-item:last-child{border-bottom:none}
+.acceso-item .ai-ic{width:40px;height:40px;border-radius:11px;background:#eaf1fd;color:var(--azul);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.acceso-item .ai-ic svg{width:19px;height:19px}
+.acceso-item.con-accion{cursor:pointer}
+.acceso-item.con-accion:hover .ai-ic{background:var(--azul);color:#fff}
+.acceso-item .ai-tx strong{display:block;font-size:13.5px;color:var(--texto);font-weight:600}
+.acceso-item .ai-tx span{font-size:12px;color:var(--texto-3)}
+
+/* ---- Chips de rol (roles reales del sistema) ---- */
+.rol-administrador{background:#f0eafc;color:#7c4ddb}
+.rol-coordinador{background:#eaf1fd;color:var(--azul)}
+.rol-supervisor{background:#e6f7f4;color:#0f9b8e}
+.rol-teamleader{background:#fff4e5;color:#d98a1a}
+.rol-analista{background:#eef1f5;color:var(--texto-2)}
+.rol-reclutador{background:#fdeef4;color:#d6336c}
+
+/* ---- Avisos (flash) ---- */
+.aviso{padding:12px 16px;border-radius:10px;font-size:14px;font-weight:500;margin-bottom:16px}
+.aviso-ok{background:var(--verde-suave);color:var(--verde);border:1px solid #b7e2c7}
+.aviso-error{background:#fdecec;color:var(--rojo);border:1px solid #f5c2c5}
+
+/* ---- Modal ---- */
+.modal-fondo{position:fixed;inset:0;background:rgba(16,28,54,.5);display:none;align-items:flex-start;justify-content:center;z-index:100;padding:60px 20px;overflow-y:auto}
+.modal-fondo.abierto{display:flex}
+.modal-caja{background:#fff;border-radius:16px;width:100%;max-width:560px;box-shadow:0 25px 70px rgba(0,0,0,.3);animation:subir .18s ease}
+@keyframes subir{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-cab{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--borde)}
+.modal-cab h3{font-size:18px;color:var(--azul-osc);font-weight:700}
+.modal-x{background:none;border:none;cursor:pointer;color:var(--texto-3);display:flex;padding:4px;border-radius:7px}
+.modal-x:hover{background:#f0f4fb;color:var(--rojo)}
+.modal-x svg{width:20px;height:20px}
+.modal-form{padding:22px 24px}
+.mf-fila{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.mf-campo{margin-bottom:15px}
+.mf-campo label{display:block;font-size:13.5px;font-weight:600;color:#2b3648;margin-bottom:6px}
+.mf-campo input,.mf-campo select{width:100%;border:1px solid var(--borde);border-radius:9px;padding:11px 13px;font-size:14.5px;color:var(--texto);background:var(--fondo)}
+.mf-campo input:focus,.mf-campo select:focus{outline:none;border-color:var(--azul);background:#fff;box-shadow:0 0 0 3px rgba(11,61,145,.12)}
+.modal-pie{display:flex;justify-content:flex-end;gap:10px;margin-top:8px;padding-top:16px;border-top:1px solid var(--borde)}
+@media (max-width:520px){ .mf-fila{grid-template-columns:1fr} }
+
+/* Checkbox dentro del modal (publicar vacante, etc.) */
+.mf-check{display:flex;align-items:center;gap:9px;font-size:13.5px;color:var(--texto-2);margin:6px 0 4px;cursor:pointer}
+.mf-check input{width:16px;height:16px;accent-color:var(--azul);cursor:pointer}
+
+/* ---- Sub-pestañas del módulo Administración ---- */
+.subtabs{display:flex;gap:6px;border-bottom:1px solid var(--borde);margin-bottom:18px}
+.subtabs a{padding:10px 18px;font-size:14px;font-weight:600;color:var(--texto-2);border-bottom:2px solid transparent;margin-bottom:-1px}
+.subtabs a:hover{color:var(--azul)}
+.subtabs a.on{color:var(--azul);border-bottom-color:var(--azul)}
+.version-chip{background:#eaf1fd;color:var(--azul);font-size:13px;font-weight:600;padding:8px 14px;border-radius:20px}
+
+/* ---- Mantenimiento ---- */
+.mant-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.mant-full{grid-column:1 / -1}
+.mant-h{display:flex;align-items:center;gap:10px;font-size:16px;margin-bottom:10px}
+.mant-ic{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.mant-ic svg{width:19px;height:19px}
+.mant-ic.azul{background:#eaf1fd;color:var(--azul)}
+.mant-ic.rojo{background:#fdecec;color:var(--rojo)}
+.mant-ic.verde{background:var(--verde-suave);color:var(--verde)}
+.mant-desc{font-size:13.5px;color:var(--texto-2);margin-bottom:14px;line-height:1.5}
+.mant-sub{font-size:13px;color:var(--texto-2);font-weight:700;margin:18px 0 8px}
+.mant-alerta{display:flex;gap:10px;background:#fff8e6;border:1px solid #f5e2b0;border-radius:9px;padding:11px 13px;font-size:12.5px;color:#7a5b00;line-height:1.45;margin-bottom:14px}
+.mant-alerta svg{width:18px;height:18px;color:#d98a1a;flex-shrink:0}
+.tabla-mini{width:100%;border-collapse:collapse;margin-top:4px}
+.tabla-mini th{text-align:left;font-size:11px;letter-spacing:.3px;color:var(--texto-3);font-weight:600;padding:0 8px 8px;border-bottom:1px solid var(--borde)}
+.tabla-mini td{padding:9px 8px;font-size:12.5px;color:var(--texto-2);border-bottom:1px solid var(--borde)}
+.tabla-mini tr:last-child td{border-bottom:none}
+.tabla-mini .vacio{text-align:center;color:var(--texto-3);padding:14px}
+
+@media (max-width:900px){ .mant-grid{grid-template-columns:1fr} }
+
+/* ---- Menú contextual (⋮) de las filas ---- */
+.con-menu{position:relative}
+.menu-kebab{position:fixed;top:0;left:0;background:#fff;border:1px solid var(--borde);
+  border-radius:11px;box-shadow:0 14px 34px rgba(16,28,54,.18);min-width:226px;max-width:280px;
+  max-height:70vh;overflow-y:auto;padding:6px;z-index:300;
+  display:none;text-align:left}
+.menu-kebab.abierto{display:block}
+.menu-kebab form{margin:0}
+.menu-kebab button{display:flex;align-items:center;gap:9px;width:100%;background:none;border:none;
+  padding:9px 11px;border-radius:8px;font-size:13.5px;color:var(--texto-2);cursor:pointer;
+  font-family:inherit;text-align:left;white-space:nowrap}
+.menu-kebab button:hover{background:#f0f4fb;color:var(--azul)}
+.menu-kebab button svg{width:16px;height:16px;flex-shrink:0}
+.menu-kebab .op-eliminar{color:var(--rojo)}
+.menu-kebab .op-eliminar:hover{background:#fdecec;color:var(--rojo)}
+.menu-kebab .op-activar{color:var(--verde)}
+.menu-kebab .op-activar:hover{background:var(--verde-suave);color:var(--verde)}
+
+/* ---- Ficha de solo lectura (modal Ver) ---- */
+.ficha-cab{display:flex;align-items:center;gap:13px;padding-bottom:16px;margin-bottom:6px;border-bottom:1px solid var(--borde)}
+.ficha-cab .cand-avatar{width:46px;height:46px;font-size:16px;color:#fff}
+.ficha-cab strong{display:block;font-size:16px;color:var(--azul-osc)}
+.ficha-cab span{font-size:13px;color:var(--texto-3)}
+.ficha-datos{display:grid;grid-template-columns:150px 1fr;gap:9px 14px;margin:14px 0 4px}
+.ficha-datos dt{font-size:13px;color:var(--texto-3);font-weight:600}
+.ficha-datos dd{margin:0;font-size:13.5px;color:var(--texto);font-weight:500}
+@media (max-width:520px){ .ficha-datos{grid-template-columns:1fr;gap:2px 0}
+  .ficha-datos dt{margin-top:8px} }
+
+/* ---- Bitácora de accesos ---- */
+.acceso-item.con-accion{background:#f7f9fd;margin:0 -10px;padding:12px 10px;border-radius:10px}
+.acceso-item.con-accion:hover{background:#eaf1fd}
+.bit-resumen{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:12px}
+.bit-nota{font-size:12px;color:var(--texto-3);line-height:1.5}
+.bit-vacio{text-align:center;color:var(--texto-3);font-size:13.5px;padding:26px 10px;
+  background:var(--fondo);border:1px dashed var(--borde);border-radius:10px}
+.bit-scroll{max-height:340px;overflow-y:auto;border:1px solid var(--borde);border-radius:10px}
+.bit-scroll .tabla-mini{margin-top:0}
+.bit-scroll .tabla-mini th{position:sticky;top:0;background:#fff;z-index:1;padding-top:10px}
+
+/* ---- Botón pequeño de cerrar sesión ---- */
+.btn-mini-rojo{background:#fff;border:1px solid #f5c2c5;color:var(--rojo);border-radius:8px;
+  padding:6px 10px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap}
+.btn-mini-rojo:hover{background:#fdecec}
+
+/* ---- Matriz de roles ---- */
+.tabla-permisos td:first-child{white-space:normal;min-width:260px}
+.tabla-permisos .col-ok{text-align:center;width:78px}
+.tabla-permisos .si{color:var(--verde);font-weight:700}
+.tabla-permisos .no{color:#c9d1e0;font-weight:700}
+
+/* ---- Ejemplo de CSV ---- */
+.bit-ejemplo{background:var(--fondo);border:1px dashed var(--borde);border-radius:9px;
+  padding:11px 13px;font-family:Consolas,'Courier New',monospace;font-size:12.5px;color:var(--texto-2);
+  line-height:1.7;white-space:nowrap;overflow-x:auto}
+
+/* ============================================================
+   Vista compacta: todo el módulo cabe en una sola pantalla
+   ============================================================ */
+.panel-encabezado{margin-bottom:10px;gap:12px}
+.panel-encabezado h2{font-size:19px}
+.panel-encabezado p{font-size:13px;margin-top:2px}
+.subtabs{margin-bottom:12px}
+.subtabs a{padding:7px 14px;font-size:13.5px}
+.aviso{padding:10px 14px;margin-bottom:12px;font-size:13.5px}
+
+.grid-kpis-cand{gap:11px;margin-bottom:12px}
+.kpi-cand{gap:10px;padding:10px 13px}
+.kpi-cand .ic{width:34px;height:34px;border-radius:10px}
+.kpi-cand .ic svg{width:18px;height:18px}
+.kpi-cand .txt small{font-size:12px}
+.kpi-cand .txt .num{font-size:20px}
+.kpi-cand .txt .pie{font-size:11px}
+
+.filtros-cand{gap:10px;padding:9px 13px;margin-bottom:12px}
+.filtro-buscar{gap:8px;padding:8px 12px}
+.filtro-buscar input{font-size:13.5px}
+.filtro-campo{gap:4px}
+.filtro-campo label{font-size:11.5px}
+.filtro-campo select{padding:8px 11px;font-size:13.5px;min-width:110px}
+.btn-filtros{padding:9px 14px;font-size:13.5px}
+.btn-limpiar{padding:9px 4px;font-size:13.5px}
+
+@media (min-width:1151px){.cand-layout{grid-template-columns:1fr 300px}}
+.cand-layout{gap:14px}
+.panel-lat{gap:12px}
+.panel-lat .tarjeta{padding:13px 15px}
+.panel-lat .tarjeta h3{font-size:14.5px}
+
+.acceso-item{gap:10px;padding:8px 0}
+.acceso-item .ai-ic{width:34px;height:34px;border-radius:10px}
+.acceso-item .ai-ic svg{width:16px;height:16px}
+.acceso-item .ai-tx strong{font-size:13px}
+.acceso-item .ai-tx span{font-size:11.5px}
+.acceso-item.con-accion{margin:0 -8px;padding:8px}
+.acceso-item.con-accion:hover{padding:8px}
+
+.accion-rapida{gap:10px;padding:8px 0}
+.accion-rapida .ar-ic{width:34px;height:34px;border-radius:10px}
+.accion-rapida .ar-ic svg{width:16px;height:16px}
+.accion-rapida .ar-tx strong{font-size:13px}
+.accion-rapida .ar-tx span{font-size:11.5px}
+
+.tabla-cand th{padding:0 10px 9px}
+.tabla-cand td{padding:7px 10px}
+.usuario-cel{gap:9px}
+.usuario-cel .cand-avatar{width:30px;height:30px;font-size:11.5px}
+.usuario-cel .u{font-size:13px}
+.tabla-cand .chip{font-size:11.5px;padding:4px 10px}
+.icobtn{width:30px;height:30px;border-radius:8px}
+.icobtn svg{width:15px;height:15px}
+.tabla-pie{margin-top:10px;font-size:12.5px}
+.pag{width:30px;height:30px;font-size:13px}
+
+/* ---- Acceso al portal p�blico desde el men� de fila ---- */
+.menu-kebab .op-portal{color:var(--azul)}
+.menu-kebab .op-portal:hover{background:#eaf1fd;color:var(--azul)}
+.menu-kebab .op-off{color:var(--texto-3);cursor:not-allowed;opacity:.75}
+.menu-kebab .op-off:hover{background:none;color:var(--texto-3)}
+.menu-kebab .op-off svg{color:var(--rojo)}
+
+/* ============================================================
+   Pesta�a Correo (configuraci�n SMTP)
+   ============================================================ */
+.mf-ayuda{display:block;font-size:12px;color:var(--texto-3);margin-top:5px;line-height:1.45}
+.correo-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.correo-grid .mf-campo{margin-bottom:0}
+.correo-grid .correo-acciones{grid-column:1/-1}
+.correo-test{display:flex;align-items:flex-end;gap:12px}
+.correo-test .mf-campo{flex:1;margin-bottom:0}
+.chip.cl-pendiente{background:#fff4e5;color:#a86a06}
+@media (max-width:1150px){ .correo-grid{grid-template-columns:repeat(2,1fr)} }
+@media (max-width:640px){ .correo-grid{grid-template-columns:1fr} .correo-test{flex-direction:column;align-items:stretch} }
+
+/* ============================================================
+   Celda de usuario: nombre de la persona + cuenta de correo
+   ============================================================ */
+.usuario-cel{gap:10px}
+.usuario-cel .n{display:block;font-size:13.5px;font-weight:700;color:var(--texto);line-height:1.25}
+.usuario-cel .c{display:block;font-size:12px;color:var(--texto-3);word-break:break-all;font-weight:500}
+.usuario-cel .c.sin-cuenta{font-style:italic}
+
+/* Modal de usuario: un solo campo cuando no hay contrase�a */
+.mf-fila.una{grid-template-columns:1fr}

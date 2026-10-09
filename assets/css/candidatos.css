@@ -1,0 +1,152 @@
+/* ============================================================
+   SSR - Claro Ecuador | Estilos del módulo Candidatos
+   (se carga junto con dashboard.css, reutiliza sus variables)
+   ============================================================ */
+
+/* ---- Encabezado con botón Exportar ---- */
+.btn-linea{
+  display:inline-flex;align-items:center;gap:9px;
+  padding:12px 20px;border:1px solid var(--borde);border-radius:11px;
+  background:#fff;color:var(--texto-2);font-size:14.5px;font-weight:700;cursor:pointer;
+  transition:background .15s;
+}
+.btn-linea svg{width:18px;height:18px}
+.btn-linea:hover{background:#f0f4fb}
+
+/* ---- KPIs de candidatos (icono a la izquierda) ---- */
+.grid-kpis-cand{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+.kpi-cand{display:flex;align-items:center;gap:13px;background:#fff;border:1px solid var(--borde);border-radius:var(--radio);box-shadow:var(--sombra);padding:15px 16px}
+.kpi-cand .ic{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.kpi-cand .ic svg{width:22px;height:22px}
+.kpi-cand .ic.azul{background:#eaf1fd;color:var(--azul)}
+.kpi-cand .ic.ambar{background:#fff4e5;color:#d98a1a}
+.kpi-cand .ic.verde{background:var(--verde-suave);color:var(--verde)}
+.kpi-cand .ic.rojo{background:#fdecec;color:var(--rojo)}
+.kpi-cand .txt small{font-size:13px;color:var(--texto-2);font-weight:600}
+.kpi-cand .txt .num{font-size:25px;font-weight:800;color:var(--texto);line-height:1.15}
+.kpi-cand .txt .pie{font-size:12px;color:var(--texto-3)}
+
+/* ---- Layout de dos columnas (tabla + panel derecho) ---- */
+.cand-layout{display:grid;grid-template-columns:1fr 340px;gap:18px;align-items:start}
+
+/* ---- Barra de filtros ---- */
+.filtros-cand{display:flex;align-items:flex-end;gap:12px;background:#fff;border:1px solid var(--borde);border-radius:var(--radio);box-shadow:var(--sombra);padding:13px 16px;margin-bottom:14px;flex-wrap:wrap}
+.filtro-buscar{flex:1;min-width:230px;display:flex;align-items:center;gap:10px;background:var(--fondo);border:1px solid var(--borde);border-radius:10px;padding:11px 14px}
+.filtro-buscar svg{width:18px;height:18px;color:var(--texto-3)}
+.filtro-buscar input{border:none;background:none;outline:none;width:100%;font-size:14px}
+.filtro-campo{display:flex;flex-direction:column;gap:6px}
+.filtro-campo label{font-size:12px;color:var(--texto-3);font-weight:600}
+.filtro-campo select{border:1px solid var(--borde);background:#fff;border-radius:10px;padding:10px 14px;font-size:14px;color:var(--texto-2);min-width:120px;cursor:pointer}
+.filtro-campo input[type="date"]{border:1px solid var(--borde);background:#fff;border-radius:10px;padding:10px 14px;font-size:14px;color:var(--texto-2);min-width:150px}
+.btn-filtros{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--borde);background:#fff;border-radius:10px;padding:11px 16px;font-size:14px;font-weight:600;color:var(--texto-2);cursor:pointer}
+.btn-filtros svg{width:16px;height:16px}
+.btn-filtros:hover{background:#f0f4fb}
+.btn-limpiar{color:var(--azul);font-size:14px;font-weight:600;background:none;border:none;cursor:pointer;padding:11px 4px}
+.btn-limpiar:hover{text-decoration:underline}
+
+/* ---- Tabla de candidatos ---- */
+.tabla-cand{width:100%;border-collapse:collapse}
+.tabla-cand th{text-align:left;font-size:11.5px;letter-spacing:.3px;color:var(--texto-3);font-weight:600;padding:0 12px 14px;border-bottom:1px solid var(--borde)}
+.tabla-cand td{padding:11px 12px;border-bottom:1px solid var(--borde);vertical-align:middle}
+.tabla-cand tr:last-child td{border-bottom:none}
+.tabla-cand tr:hover td{background:#fafbfe}
+.col-check{width:38px}
+.col-check input{width:16px;height:16px;accent-color:var(--azul);cursor:pointer}
+
+.cand-persona{display:flex;align-items:center;gap:12px}
+.cand-avatar{width:40px;height:40px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px}
+.cand-datos{display:flex;flex-direction:column;line-height:1.35}
+.cand-datos .nombre{font-size:14px;font-weight:600;color:var(--texto)}
+.cand-datos .contacto{font-size:12px;color:var(--texto-3)}
+
+.cand-vacante{font-size:13px;color:var(--texto-2);max-width:150px}
+.fecha{font-size:13px;color:var(--texto-2);line-height:1.4}
+.fecha small{display:block;color:var(--texto-3);font-size:12px}
+
+.chip{display:inline-block;font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;white-space:nowrap}
+/* etapas */
+.et-postulacion{background:#eef1f5;color:var(--texto-2)}
+.et-filtro{background:#f0eafc;color:#7c4ddb}
+.et-rh{background:#e6f7f4;color:#0f9b8e}
+.et-tecnica{background:#eaf1fd;color:var(--azul)}
+.et-cliente{background:#eaf1fd;color:var(--azul-claro)}
+.et-oferta{background:var(--verde-suave);color:var(--verde)}
+.et-contratado{background:#fdecec;color:var(--rojo)}
+/* estados */
+.es-proceso{background:#fff4e5;color:#d98a1a}
+.es-seleccionado{background:var(--verde-suave);color:var(--verde)}
+.es-descartado{background:#fdecec;color:var(--rojo)}
+
+.acciones{display:flex;align-items:center;gap:6px}
+.icobtn{width:34px;height:34px;border:1px solid var(--borde);background:#fff;border-radius:9px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--texto-2);transition:background .15s}
+.icobtn:hover{background:#f0f4fb;color:var(--azul)}
+.icobtn svg{width:17px;height:17px}
+
+/* ---- Panel derecho ---- */
+.panel-lat{display:flex;flex-direction:column;gap:18px}
+.panel-lat .tarjeta h3{font-size:15.5px}
+
+/* Donut */
+.donut-cont{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.donut{width:132px;height:132px;flex-shrink:0}
+.donut-leyenda{flex:1;display:flex;flex-direction:column;gap:7px}
+.leyenda-item{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--texto-2)}
+.leyenda-item .punto{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.leyenda-item .et{flex:1}
+.leyenda-item .vv{color:var(--texto-3);font-weight:600}
+.total-fila{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--borde);margin-top:12px;padding-top:12px;font-weight:700;font-size:14px}
+.total-fila span:last-child{color:var(--azul)}
+
+/* Fuentes (barras) */
+.fuente{margin-bottom:13px}
+.fuente-top{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px}
+.fuente-top .nom{color:var(--texto-2)}
+.fuente-top .pc{color:var(--texto);font-weight:700}
+.barra-base{height:8px;background:var(--fondo);border-radius:6px;overflow:hidden}
+.barra-fill{height:100%;background:linear-gradient(90deg,var(--azul-claro),var(--azul));border-radius:6px}
+
+/* Acciones rápidas */
+.accion-rapida{display:flex;align-items:center;gap:13px;padding:12px 0;border-bottom:1px solid var(--borde);cursor:pointer}
+.accion-rapida:last-child{border-bottom:none}
+.accion-rapida .ar-ic{width:40px;height:40px;border-radius:11px;background:#eaf1fd;color:var(--azul);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.accion-rapida .ar-ic svg{width:19px;height:19px}
+.accion-rapida:hover .ar-ic{background:var(--azul);color:#fff}
+.accion-rapida .ar-tx strong{display:block;font-size:13.5px;color:var(--texto);font-weight:600}
+.accion-rapida .ar-tx span{font-size:12px;color:var(--texto-3)}
+
+/* Responsive */
+@media (max-width:1150px){
+  .grid-kpis-cand{grid-template-columns:repeat(2,1fr)}
+  .cand-layout{grid-template-columns:1fr}
+}
+@media (max-width:640px){
+  .grid-kpis-cand{grid-template-columns:1fr}
+  .tabla-cand{display:block;overflow-x:auto;white-space:nowrap}
+}
+
+/* Toggle Lista / Tablero (une Candidatos y Kanban) */
+.barra-vista{display:flex;justify-content:flex-end;margin-bottom:14px}
+.vista-toggle{display:inline-flex;border:1px solid var(--borde);border-radius:10px;overflow:hidden;background:#fff}
+.vista-toggle a{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;font-size:13.5px;color:var(--texto-2);cursor:pointer}
+.vista-toggle a svg{width:16px;height:16px}
+.vista-toggle a.on{background:#eaf1fd;color:var(--azul);font-weight:600}
+.vista-toggle a:hover:not(.on){background:#f0f4fb}
+
+/* Nota de validación SARA en el modal de registro */
+.nota-sara{display:flex;align-items:flex-start;gap:9px;background:#eef4ff;border:1px solid #d5e3fb;border-radius:9px;padding:11px 13px;font-size:12.5px;color:var(--texto-2);line-height:1.4;margin-bottom:6px}
+.nota-sara svg{width:18px;height:18px;color:var(--azul);flex-shrink:0}
+
+/* Info del candidato en el modal de cambio de etapa */
+.me-info{background:#f4f7fc;border:1px solid var(--borde);border-radius:9px;padding:11px 13px;font-size:13px;color:var(--texto-2);line-height:1.6;margin-bottom:14px}
+
+/* ---- HU-11: reclutador asignado y carga del equipo ---- */
+.recl-asig{display:block;font-size:11.5px;color:var(--texto-3);margin-top:3px}
+.carga-item{padding:10px 0;border-bottom:1px solid var(--borde)}
+.carga-item:last-child{border-bottom:none}
+.carga-top{display:flex;justify-content:space-between;font-size:13.5px;margin-bottom:6px}
+.carga-nom{color:var(--texto);font-weight:600}
+.carga-tot{color:var(--azul);font-weight:800}
+.carga-barra{height:7px;background:var(--fondo);border-radius:6px;overflow:hidden}
+.carga-barra>div{height:100%;background:linear-gradient(90deg,var(--azul-claro),var(--azul));border-radius:6px}
+.carga-det{display:flex;gap:10px;margin-top:6px;font-size:11.5px}
+.d-proc{color:#d98a1a}.d-sel{color:var(--verde)}.d-desc{color:var(--rojo)}

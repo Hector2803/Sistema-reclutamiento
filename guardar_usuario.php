@@ -242,7 +242,7 @@ try {
 
     // Envío de credenciales al correo personal de la persona
     $html = correoCredenciales($nombre, $usuario, $clave, true);
-    [$okEnv, $msgEnv] = correoEnviar($pdo, $correo, 'Tus credenciales de acceso · SSR A365', $html, $nuevoId);
+    [$okEnv, $msgEnv] = correoEnviar($pdo, $correo, 'Tu cuenta en el sistema de reclutamiento de A365', $html, $nuevoId);
 
     responder(true, 'Usuario creado correctamente.');
 

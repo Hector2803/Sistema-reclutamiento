@@ -1,5 +1,5 @@
 -- ============================================================
---  SSR - A365 | Base de datos UNIFICADA (SARA + EVALUAR)
+--  SSR - A365 | Base de datos del sistema de reclutamiento
 --  Sistema de Seguimiento de Reclutamiento
 --  Motor: MySQL / MariaDB (XAMPP)  ·  Charset: utf8mb4
 --  Importar desde phpMyAdmin o MySQL Workbench.
@@ -98,7 +98,7 @@ CREATE TABLE campanas (
 ) ENGINE=InnoDB;
 
 -- ============================================================
---  4) BLACKLIST (validación tipo SARA)
+--  4) BLACKLIST (validación automática al registrar)
 -- ============================================================
 CREATE TABLE blacklist (
     id        INT AUTO_INCREMENT PRIMARY KEY,
@@ -127,7 +127,7 @@ CREATE TABLE postulantes (
 
 -- ============================================================
 --  6) POSTULACIONES (une postulante + campaña + etapa)
---     Es la fila central del seguimiento (SARA).
+--     Es la fila central del seguimiento.
 -- ============================================================
 CREATE TABLE postulaciones (
     id                 INT AUTO_INCREMENT PRIMARY KEY,
@@ -290,38 +290,44 @@ INSERT INTO origenes (nombre) VALUES
 ('Portal web'),('Computrabajo'),('PAND PE'),('Redes sociales'),
 ('Referido'),('Trabajo de campo'),('Base anterior');
 
--- Etapas del embudo (según el flujo real de A365)
+-- Etapas del embudo (flujo real de A365)
+--  1 Postulación (automática: valida DNI, lista negra y duplicados)
+--  2 Evaluación (test): lo rinde el postulante en el portal público
+--  3 Validación de datos, CV y documentos (el sistema puntúa el CV; el reclutador verifica)
+--  4 Entrevista presencial (la agenda el reclutador)
+--  5 Capacitaciones (hasta 5, con control de asistencia)
+--  6 Proceso finalizado (se muestra en el seguimiento del postulante)
 INSERT INTO etapas (nombre, orden, color) VALUES
-('Postulación',            1, '#2f6fed'),
-('Validación (SARA)',      2, '#3b82f6'),
-('Contacto telefónico',    3, '#7c4ddb'),
-('Entrevista / Role Play', 4, '#f5a623'),
-('Acepta propuesta',       5, '#0ea5a4'),
-('Evaluación (test)',      6, '#22a06b'),
-('Antecedentes',           7, '#6366f1'),
-('Ingresa',                8, '#16a34a');
+('Postulación',                        1, '#2f6fed'),
+('Evaluación (test)',                  2, '#7c4ddb'),
+('Validación (datos, CV y documentos)',3, '#f5a623'),
+('Entrevista presencial',              4, '#0ea5a4'),
+('Capacitaciones',                     5, '#6366f1'),
+('Proceso finalizado',                 6, '#16a34a');
 
 -- Motivos de descarte por etapa
--- Validación (SARA)
 INSERT INTO motivos_descarte (descripcion, etapa_id) VALUES
-('En blacklist', 2),
-('Activo en otra campaña', 2),
-('Postulación reiterada', 2),
--- Contacto telefónico
+-- 1 Postulación (validación automática del registro)
+('En blacklist', 1),
+('Activo en otra campaña', 1),
+('Postulación reiterada', 1),
+-- 2 Evaluación (test)
+('No alcanzó el puntaje mínimo (70%)', 2),
+-- 3 Validación de datos, CV y documentos
+('CV no cumple el perfil de la vacante', 3),
+('Documentos o datos incompletos o no verificables', 3),
+('Observación en antecedentes', 3),
 ('No interesado por remuneración', 3),
 ('No interesado por horario', 3),
 ('No interesado por distancia / ubicación', 3),
 ('No contesta / número equivocado', 3),
--- Entrevista / Role Play
+-- 4 Entrevista presencial
 ('No cumple el perfil', 4),
 ('Competencias comunicativas insuficientes', 4),
 ('No asistió a la entrevista', 4),
--- Acepta propuesta
+-- 5 Capacitaciones
+('Inasistencia a capacitación', 5),
 ('Rechaza la propuesta', 5),
--- Evaluación (test)
-('No alcanzó el puntaje mínimo (70%)', 6),
--- Antecedentes
-('Observación en antecedentes', 7),
 -- General
 ('Desistió del proceso', NULL);
 

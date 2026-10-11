@@ -5,14 +5,15 @@ $estilosExtra = ['assets/css/reportes.css'];
 
 require_once __DIR__ . '/includes/guardia.php';
 require_once __DIR__ . '/config/conexion.php';
+require_once __DIR__ . '/includes/alcance.php';
 $pdo = obtenerConexion();
 
 /* ===== Datos base ===== */
-$totalReq   = (int)$pdo->query("SELECT COUNT(*) c FROM campanas")->fetch()['c'];
-$totalPost  = (int)$pdo->query("SELECT COUNT(*) c FROM postulaciones")->fetch()['c'];
-$selec      = (int)$pdo->query("SELECT COUNT(*) c FROM postulaciones WHERE estado='Seleccionado'")->fetch()['c'];
-$descart    = (int)$pdo->query("SELECT COUNT(*) c FROM postulaciones WHERE estado='Descartado'")->fetch()['c'];
-$enproc     = (int)$pdo->query("SELECT COUNT(*) c FROM postulaciones WHERE estado='En Proceso'")->fetch()['c'];
+$totalReq   = (int)$pdo->query("SELECT COUNT(*) c FROM campanas WHERE 1=1" . sqlAlcanceCampana('area_id'))->fetch()['c'];
+$totalPost  = (int)$pdo->query("SELECT COUNT(*) c FROM postulaciones WHERE 1=1" . sqlAlcancePost('campana_id'))->fetch()['c'];
+$selec      = (int)$pdo->query("SELECT COUNT(*) c FROM postulaciones WHERE estado='Seleccionado'" . sqlAlcancePost('campana_id'))->fetch()['c'];
+$descart    = (int)$pdo->query("SELECT COUNT(*) c FROM postulaciones WHERE estado='Descartado'" . sqlAlcancePost('campana_id'))->fetch()['c'];
+$enproc     = (int)$pdo->query("SELECT COUNT(*) c FROM postulaciones WHERE estado='En Proceso'" . sqlAlcancePost('campana_id'))->fetch()['c'];
 $tasaSel    = $totalPost ? round($selec*100/$totalPost,1) : 0;
 $tasaDesc   = $totalPost ? round($descart*100/$totalPost,1) : 0;
 $candXReq   = $totalReq ? round($totalPost/$totalReq,2) : 0;
@@ -30,7 +31,7 @@ $kpis = [
 $reqEstado = [];
 $colEst = ['Abierto'=>'#2f6fed','En Proceso'=>'#f5a623','Cerrado'=>'#22a06b'];
 foreach (['Abierto','En Proceso','Cerrado'] as $es) {
-    $n = (int)$pdo->query("SELECT COUNT(*) c FROM campanas WHERE estado=".$pdo->quote($es))->fetch()['c'];
+    $n = (int)$pdo->query("SELECT COUNT(*) c FROM campanas WHERE estado=".$pdo->quote($es) . sqlAlcanceCampana('area_id'))->fetch()['c'];
     $pct = $totalReq ? round($n*100/$totalReq,1) : 0;
     if ($n>0) $reqEstado[] = [$es,$n,$pct,$colEst[$es]];
 }
@@ -52,7 +53,8 @@ $colFun = ['#0b3d91','#1e56c0','#3b74d6','#6499e2','#9cc0ef','#a9c4ea','#f0a37a'
 $base = 0;
 foreach ($etapasOrd as $i=>$e) {
     $n = (int)$pdo->query(
-        "SELECT COUNT(DISTINCT postulacion_id) c FROM historial_etapas WHERE etapa_destino=".(int)$e['id'])->fetch()['c'];
+        "SELECT COUNT(DISTINCT h.postulacion_id) c FROM historial_etapas h INNER JOIN postulaciones p ON p.id=h.postulacion_id
+          WHERE h.etapa_destino=".(int)$e['id'] . sqlAlcancePost('p.campana_id'))->fetch()['c'];
     if ($i===0) $base = $n;
     $pct = $base ? round($n*100/$base,1) : 0;
     $w   = max(30, (int)round($pct));
@@ -63,6 +65,8 @@ foreach ($etapasOrd as $i=>$e) {
 $motivosDesc = $pdo->query(
     "SELECT m.descripcion, COUNT(*) c
      FROM historial_etapas h INNER JOIN motivos_descarte m ON m.id=h.motivo_id
+     INNER JOIN postulaciones p ON p.id=h.postulacion_id
+     WHERE 1=1" . sqlAlcancePost('p.campana_id') . "
      GROUP BY m.id ORDER BY c DESC LIMIT 6")->fetchAll();
 $totalDesc = array_sum(array_map(fn($x)=>(int)$x['c'], $motivosDesc));
 $fuentes = [];
@@ -71,12 +75,16 @@ foreach ($motivosDesc as $md) {
     $fuentes[] = [$md['descripcion'], $pct];
 }
 
+/* Inasistencias a capacitaciones (causa de descarte en la etapa 5) */
+$inasist = (int)$pdo->query("SELECT COUNT(*) FROM capacitaciones k INNER JOIN postulaciones p ON p.id=k.postulacion_id WHERE k.asistencia='No asistió'" . sqlAlcancePost('p.campana_id'))->fetchColumn();
+
 /* ===== Resumen general ===== */
 $resumen = [
     ['users','Candidatos por requerimiento', (string)$candXReq],
     ['check','Tasa de selección',            $tasaSel.'%'],
     ['reloj','Tasa de descarte',             $tasaDesc.'%'],
     ['users','Total descartados',            (string)$descart],
+    ['reloj','Inasistencias a capacitaciones', (string)$inasist],
 ];
 
 /* ===== Evolución: candidatos registrados por día (últimos 8 días) ===== */
@@ -84,7 +92,7 @@ $dias = [];
 for ($i=7;$i>=0;$i--) $dias[date('Y-m-d', strtotime("-$i day"))] = 0;
 $reg = $pdo->query(
     "SELECT DATE(fecha_postulacion) d, COUNT(*) c FROM postulaciones
-     WHERE fecha_postulacion >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+     WHERE fecha_postulacion >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)" . sqlAlcancePost('campana_id') . "
      GROUP BY DATE(fecha_postulacion)")->fetchAll();
 foreach ($reg as $r) { if (isset($dias[$r['d']])) $dias[$r['d']] = (int)$r['c']; }
 $series = [ ['Candidatos registrados', '#2f6fed', array_values($dias)] ];

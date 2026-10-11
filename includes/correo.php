@@ -100,53 +100,113 @@ function correoUrlLogin(): string
     return $https . '://' . $host . rtrim($ruta, '/') . '/login.php';
 }
 
-/** Plantilla HTML base de los correos del sistema. */
-function correoPlantilla(string $titulo, string $contenido, string $nota = ''): string
+/**
+ * ¿Conviene incluir el enlace de acceso en el correo?
+ * Gmail bloquea ("mensaje sospechoso") los correos con enlaces HTTP o a dominios de
+ * hosting gratuito. En esos casos se omite el enlace y se indica entrar desde la
+ * dirección que ya conoce el usuario. Se puede forzar con
+ * define('CORREO_INCLUIR_ENLACE', true|false) en config/sistema.php.
+ */
+function correoEnlaceSeguro(string $url): bool
 {
-    $notaH = $nota !== '' ? '<p style="font-size:12.5px;color:#7a869a;margin-top:18px">' . $nota . '</p>' : '';
-    return '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>'
-        . '<body style="margin:0;background:#f4f7fc;font-family:Arial,Helvetica,sans-serif;color:#1b2437">'
-        . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:28px 14px">'
-        . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#fff;border:1px solid #e6eaf1;border-radius:14px;overflow:hidden">'
-        . '<tr><td style="background:#0b3d91;padding:18px 24px"><span style="font-size:17px;font-weight:700;color:#fff">A365 · Reclutamiento</span></td></tr>'
-        . '<tr><td style="padding:24px">'
-        . '<h1 style="font-size:18px;margin:0 0 14px;color:#08306b">' . $titulo . '</h1>'
-        . $contenido
-        . $notaH
-        . '</td></tr>'
-        . '<tr><td style="background:#f4f7fc;padding:14px 24px;font-size:12px;color:#7a869a">Este mensaje fue enviado automáticamente por el sistema SSR - A365.</td></tr>'
-        . '</table></td></tr></table></body></html>';
+    if (defined('CORREO_INCLUIR_ENLACE')) return (bool)CORREO_INCLUIR_ENLACE;
+    if (stripos($url, 'https://') !== 0) return false;
+    $host = strtolower((string)parse_url($url, PHP_URL_HOST));
+    if ($host === '' || $host === 'localhost' || filter_var($host, FILTER_VALIDATE_IP)) return false;
+    foreach (['unaux.com','epizy.com','ezyro.com','rf.gd','infinityfreeapp.com','byethost','wuaze.com','000webhostapp.com','free.nf','kesug.com','great-site.net'] as $mal) {
+        if (strpos($host, $mal) !== false) return false;
+    }
+    return true;
 }
 
-/** Cuerpo HTML con las credenciales de acceso. */
-function correoCredenciales(string $nombre, string $cuenta, string $clave, bool $temporal = true): string
+/** Imágenes del diseño del correo (se envían incrustadas, con Content-ID). */
+function correoImagenesDisponibles(): array
 {
-    $login = htmlspecialchars(correoUrlLogin(), ENT_QUOTES);
-    $fila = fn(string $et, string $v) =>
-        '<tr><td style="padding:7px 0;font-size:13px;color:#6b7793;width:140px">' . $et . '</td>'
-        . '<td style="padding:7px 0;font-size:14px;font-weight:700;color:#1b2437">' . $v . '</td></tr>';
+    $dir = __DIR__ . '/../assets/img/correo/';
+    $r = [];
+    foreach (['banner','pie','ico_sobre','ico_user','ico_mail','ico_lock','ico_info'] as $n) {
+        if (is_file($dir . $n . '.png')) $r[$n . '@a365'] = $dir . $n . '.png';
+    }
+    return $r;
+}
 
-    $tabla = '<table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse">'
-        . $fila('Nombre', htmlspecialchars($nombre, ENT_QUOTES))
-        . $fila('Cuenta de acceso', htmlspecialchars($cuenta, ENT_QUOTES))
-        . $fila($temporal ? 'Clave temporal' : 'Contraseña', htmlspecialchars($clave, ENT_QUOTES))
+/** Plantilla HTML base de los correos del sistema (banner de bienvenida, cuerpo y pie con la marca A365). */
+function correoPlantilla(string $titulo, string $contenido, string $nota = '', string $icono = 'ico_sobre'): string
+{
+    $img = fn(string $n, int $w, string $alt = '') =>
+        '<img src="cid:' . $n . '@a365" width="' . $w . '" alt="' . $alt . '" style="display:block;border:0;outline:none;height:auto">';
+    $notaH = $nota !== '' ? '<p style="font-size:12.5px;color:#7a869a;margin:18px 0 0;line-height:1.5">' . $nota . '</p>' : '';
+
+    return '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>'
+        . '<body style="margin:0;background:#f7fafd;font-family:Arial,Helvetica,sans-serif;color:#0f2447">'
+        . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:22px 10px">'
+        . '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:100%;background:#ffffff;border-radius:14px">'
+        . '<tr><td>' . $img('banner', 600, 'A365 · Bienvenido a nuestro equipo') . '</td></tr>'
+        . '<tr><td style="padding:26px 30px 8px">'
+        .   '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>'
+        .   '<td width="86" valign="top" style="padding-right:16px">' . $img($icono, 70, '') . '</td>'
+        .   '<td valign="top"><h1 style="font-size:24px;margin:2px 0 10px;color:#0b2a63">' . $titulo . '</h1>'
+        .   $contenido . '</td></tr></table>'
+        . '</td></tr>'
+        . ($notaH !== '' ? '<tr><td style="padding:0 30px 6px">' . $notaH . '</td></tr>' : '')
+        . '<tr><td style="padding:14px 30px 22px"><p style="margin:0;font-size:15px;font-weight:700;color:#0b2a63">¡Te deseamos mucho éxito en este nuevo reto!</p>'
+        . '<p style="margin:2px 0 0;font-size:13.5px;color:#7a869a">Equipo de Reclutamiento A365</p></td></tr>'
+        . '<tr><td>' . $img('pie', 600, 'A365 · Personas · Oportunidades · Crecimiento') . '</td></tr>'
+        . '</table>'
+        . '<p style="font-size:11.5px;color:#9aa6b8;margin:12px 0 0">Este mensaje fue enviado automáticamente por el sistema de reclutamiento de A365.</p>'
+        . '</td></tr></table></body></html>';
+}
+
+/** Cuerpo HTML con las credenciales de acceso (cuenta nueva o contraseña restablecida). */
+function correoCredenciales(string $nombre, string $cuenta, string $clave, bool $temporal = true, bool $reinicio = false): string
+{
+    $primer = trim(explode(' ', trim($nombre))[0] ?? $nombre);
+    $e = fn(string $v) => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+
+    $fila = fn(string $ico, string $et, string $v) =>
+        '<tr><td width="46" valign="middle" style="padding:8px 6px 8px 12px"><img src="cid:' . $ico . '@a365" width="40" alt="" style="display:block;border:0"></td>'
+        . '<td valign="middle" style="padding:8px 8px 8px 6px"><div style="font-size:13px;color:#5b6b85">' . $et . ':</div>'
+        . '<div style="font-size:16px;font-weight:700;color:#0b2a63;word-break:break-all">' . $v . '</div></td></tr>';
+
+    $tabla = '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f1f8fc;border-radius:12px;margin:14px 0 6px">'
+        . $fila('ico_user', 'Nombre', $e($primer))
+        . $fila('ico_mail', 'Cuenta de acceso', '<span style="color:#0b5ed7">' . $e($cuenta) . '</span>')
+        . $fila('ico_lock', $temporal ? 'Clave temporal' : 'Contraseña', $e($clave))
         . '</table>';
 
-    $aviso = $temporal
-        ? '<p style="font-size:13.5px;color:#1b2437;line-height:1.6;margin:16px 0 0">'
-          . 'Esta clave es <strong>temporal</strong>: al iniciar sesión se te pedirá crear una contraseña nueva.</p>'
-        : '';
+    $intro = $reinicio
+        ? '<p style="font-size:15px;color:#1b2f55;line-height:1.55;margin:0 0 4px">El administrador <strong>restableció tu contraseña</strong> del sistema de reclutamiento de A365.<br>A continuación te compartimos tus nuevos datos de acceso.</p>'
+        : '<p style="font-size:15px;color:#1b2f55;line-height:1.55;margin:0 0 4px">¡Bienvenido a A365! 🎉<br>Tu cuenta en nuestro sistema de reclutamiento se ha creado correctamente.<br>A continuación te compartimos tus datos de acceso para que puedas ingresar.</p>';
 
-    $btn = '<p style="margin:20px 0 0"><a href="' . $login . '" style="background:#0b3d91;color:#fff;text-decoration:none;'
-        . 'display:inline-block;padding:11px 20px;border-radius:9px;font-size:14px;font-weight:700">Iniciar sesión</a></p>';
+    $login = correoUrlLogin();
+    $ingreso = correoEnlaceSeguro($login)
+        ? 'Para ingresar, usa el siguiente enlace: <a href="' . $e($login) . '" style="color:#0b5ed7;font-weight:700">Iniciar sesión</a>.'
+        : 'Para ingresar, abre el sistema de reclutamiento desde la dirección que te indicó el administrador.';
+
+    $aviso = '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:14px"><tr>'
+        . '<td width="40" valign="top"><img src="cid:ico_info@a365" width="30" alt="" style="display:block;border:0"></td>'
+        . '<td valign="top" style="font-size:14px;color:#1b2f55;line-height:1.55;border-left:1px solid #dbe5f2;padding-left:14px">'
+        . ($temporal ? 'Esta clave es <strong>temporal</strong>: al iniciar sesión se te pedirá crear una contraseña nueva.<br>' : '')
+        . $ingreso . '</td></tr></table>';
 
     return correoPlantilla(
-        'Bienvenido, ' . htmlspecialchars($nombre, ENT_QUOTES),
-        '<p style="font-size:13.5px;color:#44506a;line-height:1.6;margin:0 0 14px">'
-        . 'Se creó tu cuenta en el sistema de reclutamiento. Ingresa con los siguientes datos:</p>'
-        . $tabla . $aviso . $btn,
-        'Por seguridad, no compartas estos datos. Si no solicitaste esta cuenta, contacta al administrador.'
+        'Hola, ' . $e($primer),
+        $intro . $tabla . $aviso,
+        'Por seguridad, no compartas estos datos. Si no esperabas este mensaje, contacta al administrador.'
     );
+}
+
+/** Versión en texto plano de un correo HTML (los filtros de spam penalizan los correos solo-HTML). */
+function correoTextoPlano(string $html): string
+{
+    $t = preg_replace('#<(style|head)[^>]*>.*?</\1>#is', '', $html);
+    $t = preg_replace('#<a [^>]*href="([^"]+)"[^>]*>(.*?)</a>#is', '$2: $1', $t);
+    $t = preg_replace('#</(tr|p|h1|h2|div|table)>|<br\s*/?>#i', "\n", $t);
+    $t = preg_replace('#</td>#i', '  ', $t);
+    $t = html_entity_decode(strip_tags($t), ENT_QUOTES, 'UTF-8');
+    $t = preg_replace("/[ \t]+\n/", "\n", $t);
+    $t = preg_replace("/\n{3,}/", "\n\n", $t);
+    return trim($t);
 }
 
 /* ============================================================
@@ -171,6 +231,15 @@ function smtpEscribir($fp, string $datos): bool
 }
 
 /** Envía un correo HTML. Devuelve [bool ok, string mensaje]. */
+/** Nombre que el sistema usa en el saludo EHLO: el dominio del servidor si es válido. */
+function smtpNombreEhlo(): string
+{
+    foreach ([$_SERVER['SERVER_NAME'] ?? '', gethostname() ?: ''] as $n) {
+        if ($n !== '' && strpos($n, '.') !== false && preg_match('/^[A-Za-z0-9.-]+$/', $n)) return $n;
+    }
+    return 'localhost';
+}
+
 function smtpEnviar(array $c, string $para, string $asunto, string $html): array
 {
     $host   = trim($c['host']);
@@ -189,7 +258,8 @@ function smtpEnviar(array $c, string $para, string $asunto, string $html): array
     $r = smtpLeer($fp);
     if ($r['codigo'] !== 220) { fclose($fp); return [false, 'Saludo del servidor: ' . $r['texto']]; }
 
-    smtpEscribir($fp, 'EHLO ' . (gethostname() ?: 'localhost'));
+    $ehlo = smtpNombreEhlo();
+    smtpEscribir($fp, 'EHLO ' . $ehlo);
     $r = smtpLeer($fp);
     if ($r['codigo'] !== 250) { fclose($fp); return [false, 'EHLO: ' . $r['texto']]; }
 
@@ -201,7 +271,7 @@ function smtpEnviar(array $c, string $para, string $asunto, string $html): array
             fclose($fp);
             return [false, 'No se pudo establecer la conexión cifrada (TLS).'];
         }
-        smtpEscribir($fp, 'EHLO ' . (gethostname() ?: 'localhost'));
+        smtpEscribir($fp, 'EHLO ' . $ehlo);
         $r = smtpLeer($fp);
         if ($r['codigo'] !== 250) { fclose($fp); return [false, 'EHLO (2): ' . $r['texto']]; }
     }
@@ -232,16 +302,52 @@ function smtpEnviar(array $c, string $para, string $asunto, string $html): array
     if ($r['codigo'] !== 354) { fclose($fp); return [false, 'DATA: ' . $r['texto']]; }
 
     $nombreRem = (string)($c['remitente_nombre'] ?: 'SSR A365');
+    $dominioDe = substr(strrchr($de, '@') ?: '@localhost', 1);
+    $limite    = '=_ssr_' . bin2hex(random_bytes(10));
+    $texto     = correoTextoPlano($html);
+
     $cabeceras  = 'From: =?UTF-8?B?' . base64_encode($nombreRem) . '?= <' . $de . ">\r\n";
+    $cabeceras .= 'Reply-To: ' . $de . "\r\n";
     $cabeceras .= 'To: <' . $para . ">\r\n";
     $cabeceras .= 'Subject: =?UTF-8?B?' . base64_encode($asunto) . "?=\r\n";
     $cabeceras .= 'Date: ' . date('r') . "\r\n";
-    $cabeceras .= 'Message-ID: <' . bin2hex(random_bytes(8)) . '@' . (gethostname() ?: 'localhost') . ">\r\n";
+    $cabeceras .= 'Message-ID: <' . bin2hex(random_bytes(12)) . '@' . $dominioDe . ">\r\n";
+    $cabeceras .= "Auto-Submitted: auto-generated\r\n";
     $cabeceras .= "MIME-Version: 1.0\r\n";
-    $cabeceras .= "Content-Type: text/html; charset=UTF-8\r\n";
-    $cabeceras .= "Content-Transfer-Encoding: base64\r\n";
+    $cabeceras .= 'Content-Type: multipart/alternative; boundary="' . $limite . "\"\r\n";
 
-    smtpEscribir($fp, $cabeceras . "\r\n" . chunk_split(base64_encode($html)) . "\r\n.");
+    // Imágenes incrustadas (solo las que el HTML usa con cid:)
+    $adjuntas = [];
+    foreach (correoImagenesDisponibles() as $cid => $ruta) {
+        if (strpos($html, 'cid:' . $cid) !== false) $adjuntas[$cid] = $ruta;
+    }
+
+    $cuerpo  = '--' . $limite . "\r\n";
+    $cuerpo .= "Content-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n";
+    $cuerpo .= chunk_split(base64_encode($texto)) . "\r\n";
+    $cuerpo .= '--' . $limite . "\r\n";
+    if ($adjuntas) {
+        $rel = '=_rel_' . bin2hex(random_bytes(8));
+        $cuerpo .= 'Content-Type: multipart/related; type="text/html"; boundary="' . $rel . "\"\r\n\r\n";
+        $cuerpo .= '--' . $rel . "\r\n";
+        $cuerpo .= "Content-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n";
+        $cuerpo .= chunk_split(base64_encode($html)) . "\r\n";
+        foreach ($adjuntas as $cid => $ruta) {
+            $cuerpo .= '--' . $rel . "\r\n";
+            $cuerpo .= 'Content-Type: image/png; name="' . basename($ruta) . "\"\r\n";
+            $cuerpo .= "Content-Transfer-Encoding: base64\r\n";
+            $cuerpo .= 'Content-ID: <' . $cid . ">\r\n";
+            $cuerpo .= 'Content-Disposition: inline; filename="' . basename($ruta) . "\"\r\n\r\n";
+            $cuerpo .= chunk_split(base64_encode((string)file_get_contents($ruta))) . "\r\n";
+        }
+        $cuerpo .= '--' . $rel . "--\r\n";
+    } else {
+        $cuerpo .= "Content-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n";
+        $cuerpo .= chunk_split(base64_encode($html)) . "\r\n";
+    }
+    $cuerpo .= '--' . $limite . "--\r\n";
+
+    smtpEscribir($fp, $cabeceras . "\r\n" . $cuerpo . ".");
     $r = smtpLeer($fp);
     if ($r['codigo'] !== 250) { fclose($fp); return [false, 'Envío rechazado: ' . $r['texto']]; }
 

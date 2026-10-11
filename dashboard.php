@@ -4,14 +4,15 @@ $activo = 'dashboard';
 
 require_once __DIR__ . '/includes/guardia.php';
 require_once __DIR__ . '/config/conexion.php';
+require_once __DIR__ . '/includes/alcance.php';
 $pdo = obtenerConexion();
 
 /* ---- KPIs reales ---- */
-$vacTotales = (int)$pdo->query("SELECT COUNT(*) c FROM campanas WHERE estado <> 'Cerrado'")->fetch()['c'];
-$enProceso  = (int)$pdo->query("SELECT COUNT(*) c FROM postulaciones WHERE estado='En Proceso'")->fetch()['c'];
-$totalPost  = (int)$pdo->query("SELECT COUNT(*) c FROM postulaciones")->fetch()['c'];
-$selec      = (int)$pdo->query("SELECT COUNT(*) c FROM postulaciones WHERE estado='Seleccionado'")->fetch()['c'];
-$descart    = (int)$pdo->query("SELECT COUNT(*) c FROM postulaciones WHERE estado='Descartado'")->fetch()['c'];
+$vacTotales = (int)$pdo->query("SELECT COUNT(*) c FROM campanas WHERE estado <> 'Cerrado'" . sqlAlcanceCampana('area_id'))->fetch()['c'];
+$enProceso  = (int)$pdo->query("SELECT COUNT(*) c FROM postulaciones WHERE estado='En Proceso'" . sqlAlcancePost('campana_id'))->fetch()['c'];
+$totalPost  = (int)$pdo->query("SELECT COUNT(*) c FROM postulaciones WHERE 1=1" . sqlAlcancePost('campana_id'))->fetch()['c'];
+$selec      = (int)$pdo->query("SELECT COUNT(*) c FROM postulaciones WHERE estado='Seleccionado'" . sqlAlcancePost('campana_id'))->fetch()['c'];
+$descart    = (int)$pdo->query("SELECT COUNT(*) c FROM postulaciones WHERE estado='Descartado'" . sqlAlcancePost('campana_id'))->fetch()['c'];
 $tasaAprob  = $totalPost ? round($selec * 100 / $totalPost, 1) : 0;
 $tasaCaida  = $totalPost ? round($descart * 100 / $totalPost, 1) : 0;
 
@@ -36,6 +37,7 @@ $rows = $pdo->query(
      LEFT  JOIN etapas eo ON eo.id = h.etapa_origen
      LEFT  JOIN etapas ed ON ed.id = h.etapa_destino
      LEFT  JOIN motivos_descarte m ON m.id = h.motivo_id
+     WHERE 1=1" . sqlAlcancePost('p.campana_id') . "
      ORDER BY h.id DESC LIMIT 6")->fetchAll();
 foreach ($rows as $r) {
     if ($r['motivo_id']) {
@@ -53,6 +55,7 @@ $vr = $pdo->query(
     "SELECT c.puesto, c.prioridad, c.estado, a.nombre AS area,
             (SELECT COUNT(*) FROM postulaciones p WHERE p.campana_id=c.id) AS cand
      FROM campanas c INNER JOIN areas a ON a.id=c.area_id
+     WHERE 1=1" . sqlAlcanceCampana('c.area_id') . "
      ORDER BY c.creado_en DESC LIMIT 5")->fetchAll();
 foreach ($vr as $v) {
     $vacantes[] = ['puesto'=>$v['puesto'],'cliente'=>$v['area'],'cand'=>(int)$v['cand'],

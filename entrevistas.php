@@ -5,6 +5,7 @@ $estilosExtra = ['assets/css/candidatos.css', 'assets/css/entrevistas.css', 'ass
 
 require_once __DIR__ . '/includes/guardia.php';
 require_once __DIR__ . '/config/conexion.php';
+require_once __DIR__ . '/includes/alcance.php';
 $pdo = obtenerConexion();
 
 /* Mensajes flash */
@@ -22,7 +23,7 @@ $estadosValidos = ['Programada','En Curso','Completada','Cancelada'];
 
 /* ---------------- KPIs ---------------- */
 $conteo = [];
-foreach ($pdo->query("SELECT estado, COUNT(*) c FROM entrevistas GROUP BY estado") as $r) {
+foreach ($pdo->query("SELECT en.estado, COUNT(*) c FROM entrevistas en INNER JOIN postulaciones et ON et.id = en.postulacion_id WHERE 1=1" . sqlAlcancePost('et.campana_id') . " GROUP BY en.estado") as $r) {
     $conteo[$r['estado']] = (int)$r['c'];
 }
 $gTotal = array_sum($conteo);
@@ -46,7 +47,7 @@ $sql = "SELECT en.id, en.tipo, en.fecha, en.hora, en.sala, en.estado, en.observa
           INNER JOIN postulaciones et ON et.id = en.postulacion_id
           INNER JOIN postulantes   po ON po.id = et.postulante_id
           INNER JOIN campanas      c  ON c.id  = et.campana_id
-         WHERE 1=1";
+         WHERE 1=1" . sqlAlcancePost('et.campana_id');   // reclutador: solo entrevistas de su área
 $params = [];
 if ($fQ !== '') {
     $sql .= " AND (po.nombres LIKE :q1 OR po.dni LIKE :q2 OR po.correo LIKE :q3 OR c.puesto LIKE :q4 OR en.entrevistador LIKE :q5)";
@@ -73,7 +74,7 @@ $disponibles = $pdo->query(
        FROM postulaciones p
        INNER JOIN postulantes po ON po.id = p.postulante_id
        INNER JOIN campanas c ON c.id = p.campana_id
-      WHERE p.estado = 'En Proceso'
+      WHERE p.estado = 'En Proceso' AND p.etapa_id = (SELECT id FROM etapas WHERE orden = 4 LIMIT 1)" . sqlAlcancePost('p.campana_id') . "
       ORDER BY p.fecha_postulacion DESC")->fetchAll();
 
 $usuarios = $pdo->query(
@@ -84,7 +85,8 @@ $usuarios = $pdo->query(
 
 $entrevistadores = $pdo->query(
     "SELECT DISTINCT en.entrevistador_id, en.entrevistador, en.rol_entrevistador
-       FROM entrevistas en WHERE en.entrevistador_id IS NOT NULL ORDER BY en.entrevistador")->fetchAll();
+       FROM entrevistas en INNER JOIN postulaciones et ON et.id = en.postulacion_id
+      WHERE en.entrevistador_id IS NOT NULL" . sqlAlcancePost('et.campana_id') . " ORDER BY en.entrevistador")->fetchAll();
 
 $tiposEntrevista = ['Entrevista RH','Entrevista Técnica','Entrevista Cliente'];
 
@@ -368,9 +370,9 @@ require_once __DIR__ . '/includes/layout_top.php';
         <label>Observaciones</label>
         <input type="text" name="observaciones" id="entObs" maxlength="255" placeholder="Notas para el entrevistador (opcional)">
       </div>
-      <div class="nota-sara">
+      <div class="nota-validacion">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-        El candidato verá la fecha y hora en su seguimiento por código.
+        El candidato verá la fecha, hora y lugar en su seguimiento por código.
       </div>
       <div class="modal-pie">
         <button type="button" class="btn-linea" onclick="cerrarModalEntrevista()">Cancelar</button>

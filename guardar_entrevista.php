@@ -5,6 +5,8 @@
    ============================================================ */
 require_once __DIR__ . '/includes/guardia.php';
 require_once __DIR__ . '/config/conexion.php';
+require_once __DIR__ . '/includes/alcance.php';
+require_once __DIR__ . '/includes/flujo.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: entrevistas.php');
@@ -23,9 +25,13 @@ try {
         if (!$id || !in_array($estado, $estados, true)) {
             throw new Exception('Datos inválidos para actualizar el estado.');
         }
-        $existe = $pdo->prepare("SELECT id FROM entrevistas WHERE id = :id");
+        $existe = $pdo->prepare("SELECT id, postulacion_id FROM entrevistas WHERE id = :id");
         $existe->execute([':id' => $id]);
-        if (!$existe->fetch()) throw new Exception('La entrevista ya no existe.');
+        $entExiste = $existe->fetch();
+        if (!$entExiste) throw new Exception('La entrevista ya no existe.');
+        if (!puedeGestionarPostulacion($pdo, (int)$entExiste['postulacion_id'])) {
+            throw new Exception('Solo puedes gestionar entrevistas de candidatos de tu área.');
+        }
 
         $pdo->prepare("UPDATE entrevistas SET estado = :e WHERE id = :id")
             ->execute([':e' => $estado, ':id' => $id]);
@@ -58,6 +64,12 @@ try {
         $q = $pdo->prepare("SELECT id FROM postulaciones WHERE id = :id");
         $q->execute([':id' => $postulacionId]);
         if (!$q->fetch()) $errores[] = 'La postulación seleccionada ya no existe.';
+        elseif (!puedeGestionarPostulacion($pdo, $postulacionId)) $errores[] = 'Solo puedes programar entrevistas de candidatos de tu área.';
+        elseif ($id === 0) {
+            // Solo se agenda entrevista a quien ya pasó la validación (etapa «Entrevista presencial»)
+            $pf = flujoPostulacion($pdo, $postulacionId);
+            if (!$pf || (int)$pf['orden'] !== 4 || $pf['estado'] !== 'En Proceso') $errores[] = 'Solo se agenda la entrevista a candidatos que ya aprobaron la validación (etapa «Entrevista presencial»).';
+        }
     } else {
         $errores[] = 'Selecciona al candidato / vacante.';
     }
@@ -77,9 +89,11 @@ try {
         $horaDb = strlen($hora) === 5 ? $hora . ':00' : $hora;
 
         if ($id > 0) {
-            $q = $pdo->prepare("SELECT id FROM entrevistas WHERE id = :id");
+            $q = $pdo->prepare("SELECT id, postulacion_id FROM entrevistas WHERE id = :id");
             $q->execute([':id' => $id]);
-            if (!$q->fetch()) $errores[] = 'La entrevista a editar ya no existe.';
+            $entEd = $q->fetch();
+            if (!$entEd) $errores[] = 'La entrevista a editar ya no existe.';
+            elseif (!puedeGestionarPostulacion($pdo, (int)$entEd['postulacion_id'])) $errores[] = 'Solo puedes editar entrevistas de candidatos de tu área.';
         }
     }
 

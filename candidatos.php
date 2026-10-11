@@ -5,6 +5,7 @@ $estilosExtra = ['assets/css/candidatos.css', 'assets/css/usuarios.css', 'assets
 
 require_once __DIR__ . '/includes/guardia.php';
 require_once __DIR__ . '/config/conexion.php';
+require_once __DIR__ . '/includes/alcance.php';
 $pdo = obtenerConexion();
 
 /* Mensajes flash */
@@ -26,8 +27,8 @@ if ($fDesde !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $fDesde)) { $fDesde =
 if ($fHasta !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $fHasta)) { $fHasta = ''; }
 
 /* ---- Alcance por rol (HU-11) ----
-   Reclutador: solo ve SUS candidatos.
-   Supervisor / Administrador: ven a todo el equipo y pueden filtrar por reclutador. */
+   Reclutador: solo ve los candidatos de las vacantes de SU ÁREA.
+   Supervisor / Administrador: ven todas las áreas y pueden filtrar por reclutador. */
 $rolSesion  = $_SESSION['usuario_rol'] ?? '';
 $esSupervisor = in_array($rolSesion, ['Supervisor','Administrador']);
 $usuarioSes = (int)($_SESSION['usuario_id'] ?? 0);
@@ -50,9 +51,8 @@ $sql =
      LEFT  JOIN usuarios   u  ON u.id  = p.reclutador_id
      WHERE 1=1";
 $params = [];
-if (!$esSupervisor) {                       // reclutador: solo lo suyo
-    $sql .= " AND p.reclutador_id = :yo";
-    $params[':yo'] = $usuarioSes;
+if (!$esSupervisor) {                       // reclutador: solo su área
+    $sql .= sqlAlcancePost('p.campana_id');
 } elseif ($fRecl !== '' && ctype_digit($fRecl)) {   // supervisor filtra por reclutador
     $sql .= " AND p.reclutador_id = :rec";
     $params[':rec'] = (int)$fRecl;
@@ -98,15 +98,15 @@ if ($esSupervisor) {
 }
 
 /* ---- Campañas y orígenes para el formulario y filtros ---- */
-$campanas = $pdo->query("SELECT id, codigo, puesto FROM campanas ORDER BY creado_en DESC")->fetchAll();
+$campanas = $pdo->query("SELECT id, codigo, puesto FROM campanas WHERE 1=1" . sqlAlcanceCampana('area_id') . " ORDER BY creado_en DESC")->fetchAll();
 $origenes = $pdo->query("SELECT id, nombre FROM origenes ORDER BY id")->fetchAll();
 
 /* ---- Etapas y motivos de descarte (para mover de etapa – HU-06/07) ---- */
 $etapas  = $pdo->query("SELECT id, nombre FROM etapas ORDER BY orden")->fetchAll();
 $motivos = $pdo->query("SELECT id, descripcion, etapa_id FROM motivos_descarte ORDER BY id")->fetchAll();
 
-/* ---- KPIs (supervisor: todo el equipo · reclutador: solo lo suyo) ---- */
-$alc = $esSupervisor ? '' : ' AND reclutador_id = ' . $usuarioSes;
+/* ---- KPIs (supervisor: todo el equipo · reclutador: solo su área) ---- */
+$alc = sqlAlcancePost('campana_id');   // reclutador: solo su área; supervisor/admin: todo
 $gTotal  = (int)$pdo->query("SELECT COUNT(*) c FROM postulaciones WHERE 1=1$alc")->fetch()['c'];
 $gProc   = (int)$pdo->query("SELECT COUNT(*) c FROM postulaciones WHERE estado='En Proceso'$alc")->fetch()['c'];
 $gSelec  = (int)$pdo->query("SELECT COUNT(*) c FROM postulaciones WHERE estado='Seleccionado'$alc")->fetch()['c'];
@@ -329,12 +329,12 @@ require_once __DIR__ . '/includes/layout_top.php';
                     onclick='abrirCambioEtapa(<?= (int)$c["id"] ?>, <?= json_encode($c["nombres"]) ?>, <?= (int)$c["etapa_id"] ?>, <?= json_encode($c["etapa"]) ?>)'>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
                   </button>
-                  <a class="icobtn" href="rendir_evaluacion.php?post=<?= (int)$c['id'] ?>" title="<?= $c['test_puntaje'] !== null ? 'Ver resultado de la evaluación' : 'Aplicar evaluación' ?>" aria-label="Evaluación">
+                  <a class="icobtn" href="rendir_evaluacion.php?post=<?= (int)$c['id'] ?>" title="<?= $c['test_puntaje'] !== null ? 'Ver resultado de la evaluación' : 'Evaluación pendiente (la rinde el postulante en el portal)' ?>" aria-label="Resultado de la evaluación">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
                   </a>
-                  <button class="icobtn" aria-label="Ver">
+                  <a class="icobtn" href="proceso.php?post=<?= (int)$c['id'] ?>" title="Gestionar proceso (validación, entrevista y capacitaciones)" aria-label="Gestionar proceso">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                  </button>
+                  </a>
                 </div>
               </td>
             </tr>
@@ -457,9 +457,9 @@ require_once __DIR__ . '/includes/layout_top.php';
         <label>CV del candidato (PDF, DOC o DOCX)</label>
         <input type="file" name="cv" accept=".pdf,.doc,.docx">
       </div>
-      <div class="nota-sara">
+      <div class="nota-validacion">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        Al registrar se valida el DNI (lista negra, duplicados y si ya está activo en otra campaña).
+        Al registrar se valida el DNI (lista negra, duplicados y si ya está activo en otra campaña). Luego el postulante rinde su test en el portal con su código y DNI.
       </div>
       <div class="modal-pie">
         <button type="button" class="btn-linea" onclick="document.getElementById('modalPostulante').classList.remove('abierto')">Cancelar</button>
@@ -538,6 +538,10 @@ function alternarMotivo(){
   document.getElementById('box_etapa').style.display  = esDescarte ? 'none' : 'block';
   document.getElementById('me_motivo').required = esDescarte;
 }
+</script>
+<script>
+/* Desde el tablero: «Agregar candidato» abre el formulario de registro */
+if (new URLSearchParams(location.search).get('nuevo') === '1') { document.getElementById('modalPostulante').classList.add('abierto'); }
 </script>
 
 <?php require_once __DIR__ . '/includes/layout_bottom.php'; ?>

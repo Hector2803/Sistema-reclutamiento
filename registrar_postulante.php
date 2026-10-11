@@ -1,11 +1,11 @@
 <?php
 /* ============================================================
-   SSR - A365 | Registrar postulante por DNI  (núcleo tipo SARA)
+   SSR - A365 | Registrar postulante por DNI (validación automática)
    Flujo real:
      1) Valida DNI
-     2) Consulta blacklist                (filtro SARA)
+     2) Consulta blacklist                (validación automática)
      3) ¿Postulante ya existe? -> reutiliza; si no, lo crea
-     4) ¿Ya activo en OTRA campaña?       (filtro SARA)
+     4) ¿Ya activo en OTRA campaña?       (validación automática)
      5) ¿Ya postuló a ESTA campaña?       (duplicado)
      6) Crea la postulación en etapa "Postulación" + código de
         seguimiento + primer registro en historial_etapas.
@@ -14,6 +14,8 @@
 require_once __DIR__ . '/includes/guardia.php';
 require_once __DIR__ . '/config/conexion.php';
 require_once __DIR__ . '/includes/evaluar_cv.php';
+require_once __DIR__ . '/includes/alcance.php';
+require_once __DIR__ . '/includes/flujo.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: candidatos.php');
@@ -41,6 +43,16 @@ if (!preg_match('/^[0-9]{8,15}$/', $dni)) {
 
 try {
     $pdo = obtenerConexion();
+
+    // El reclutador solo registra candidatos en campañas de su área
+    if (alcanceEsReclutador()) {
+        $ca = $pdo->prepare("SELECT 1 FROM campanas WHERE id = :c AND area_id = :a LIMIT 1");
+        $ca->execute([':c' => $campanaId, ':a' => alcanceAreaId()]);
+        if (!$ca->fetch()) {
+            $_SESSION['flash_error'] = 'Solo puedes registrar candidatos en campañas de tu área.';
+            header('Location: candidatos.php'); exit;
+        }
+    }
 
     // (2) BLACKLIST
     $bl = $pdo->prepare("SELECT motivo FROM blacklist WHERE dni = :dni LIMIT 1");
@@ -132,11 +144,8 @@ try {
         ]);
     $postulacionId = (int)$pdo->lastInsertId();
 
-    // Primer registro en el historial de etapas (entrada al embudo)
-    $pdo->prepare(
-        "INSERT INTO historial_etapas (postulacion_id, etapa_origen, etapa_destino, usuario_id)
-         VALUES (:post, NULL, :et, :usr)")
-        ->execute([':post'=>$postulacionId, ':et'=>$etapaId, ':usr'=>$usuarioId]);
+    // Historial: entra en «Postulación» y pasa a «Evaluación (test)», que el postulante rinde en el portal
+    flujoIniciarPostulacion($pdo, $postulacionId, $usuarioId);
 
     // (7) Evaluación automática del CV por palabras clave (HU-05)
     $msgCV = '';
@@ -157,7 +166,7 @@ try {
         }
     }
 
-    $_SESSION['flash_ok'] = "Candidato registrado. Código de seguimiento: $codigo.$msgCV";
+    $_SESSION['flash_ok'] = "Candidato registrado. Código de seguimiento: $codigo. Debe rendir su evaluación en el portal con su código y DNI.$msgCV";
     header('Location: candidatos.php'); exit;
 
 } catch (PDOException $e) {

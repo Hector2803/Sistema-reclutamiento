@@ -7,6 +7,7 @@
 require_once __DIR__ . '/datos_empleos.php';
 require_once __DIR__ . '/../includes/evaluar_cv.php';
 require_once __DIR__ . '/../includes/passwords.php';
+require_once __DIR__ . '/../includes/flujo.php';
 
 $errores = [];
 $id      = (int)($_REQUEST['id'] ?? 0);
@@ -44,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $pdo = obtenerConexion();
 
-            // Filtro SARA: lista negra
+            // Validación automática: lista negra
             $bl = $pdo->prepare("SELECT motivo FROM blacklist WHERE dni = :dni LIMIT 1");
             $bl->execute([':dni' => $dni]);
             if ($fila = $bl->fetch()) {
@@ -84,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
-            // Filtro SARA: activo en otra campaña
+            // Validación automática: activo en otra campaña
             $act = $pdo->prepare(
                 "SELECT c.puesto FROM postulaciones p
                   INNER JOIN campanas c ON c.id = p.campana_id
@@ -114,10 +115,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                ':ori'=>1, ':cod'=>$codigo]);
                 $postulacionId = (int)$pdo->lastInsertId();
 
-                $pdo->prepare(
-                    "INSERT INTO historial_etapas (postulacion_id, etapa_origen, etapa_destino, usuario_id)
-                     VALUES (:post, NULL, :et, NULL)")
-                    ->execute([':post'=>$postulacionId, ':et'=>$etapaId]);
+                // Entra en «Postulación» y pasa a «Evaluación (test)»
+                flujoIniciarPostulacion($pdo, $postulacionId, null);
 
                 // Evaluación automática del CV (HU-05)
                 if ($rutaCVabs) {

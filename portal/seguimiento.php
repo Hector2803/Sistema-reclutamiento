@@ -13,6 +13,8 @@ $post   = null;
 $etapasLista = [];
 $indiceActual = -1;
 $historial = [];
+$resEval = null;
+$entrevistas = [];
 
 if ($codigo !== '') {
     if (!preg_match('/^A365-[A-Z0-9]{1,10}$/', $codigo)) {
@@ -47,6 +49,25 @@ if ($codigo !== '') {
                   ORDER BY h.fecha ASC, h.id ASC");
             $h->execute([':p' => $post['id']]);
             $historial = $h->fetchAll();
+
+            /* Evaluación: ¿ya la rindió? (el postulante la rinde en el portal) */
+            $r = $pdo->prepare("SELECT puntaje, aprobado FROM resultados_eval WHERE postulacion_id = :p ORDER BY id DESC LIMIT 1");
+            $r->execute([':p' => $post['id']]);
+            $resEval = $r->fetch() ?: null;
+
+            /* Entrevistas programadas (las agenda el reclutador) */
+            $en = $pdo->prepare(
+                "SELECT tipo, fecha, hora, sala, estado FROM entrevistas
+                  WHERE postulacion_id = :p AND estado IN ('Programada','En Curso')
+                  ORDER BY fecha, hora");
+            $en->execute([':p' => $post['id']]);
+            $entrevistas = $en->fetchAll();
+
+            /* Capacitaciones agendadas (máximo 5) y su asistencia */
+            $cp = $pdo->prepare("SELECT numero, tema, fecha, hora, lugar, asistencia FROM capacitaciones WHERE postulacion_id = :p ORDER BY numero");
+            $cp->execute([':p' => $post['id']]);
+            $capacitaciones = $cp->fetchAll();
+            if ($post['estado'] === 'Seleccionado') $indiceActual = count($etapasLista); // proceso completo: todas las etapas en verde
         }
     }
 }
@@ -125,8 +146,45 @@ if ($codigo !== '') {
           <?php elseif ($post['estado'] === 'Seleccionado'): ?>
             <div class="aviso-portal">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-              <span>¡Felicidades! Fuiste seleccionado en este proceso.</span>
+              <span><strong>Proceso finalizado.</strong> ¡Felicidades! Completaste todas las etapas de selección.</span>
             </div>
+          <?php endif; ?>
+
+          <?php if ($entrevistas): ?>
+            <div class="aviso-portal">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span>
+                <?php foreach ($entrevistas as $en): ?>
+                  <strong>Entrevista presencial</strong>:
+                  <?= date('d/m/Y', strtotime($en['fecha'])) ?> a las <?= date('H:i', strtotime($en['hora'])) ?>
+                  <?= $en['sala'] ? ' · ' . htmlspecialchars($en['sala']) : '' ?><br>
+                <?php endforeach; ?>
+              </span>
+            </div>
+          <?php endif; ?>
+
+          <?php if (!empty($capacitaciones)): ?>
+            <h2 style="margin-top:22px">Tus capacitaciones</h2>
+            <ul class="lista-check">
+              <?php foreach ($capacitaciones as $cp): ?>
+                <li>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  Capacitación <?= (int)$cp['numero'] ?>: <?= htmlspecialchars($cp['tema']) ?> · <?= date('d/m/Y', strtotime($cp['fecha'])) ?> a las <?= date('H:i', strtotime($cp['hora'])) ?>
+                  <?= $cp['lugar'] ? ' · ' . htmlspecialchars($cp['lugar']) : '' ?> ·
+                  <strong><?= $cp['asistencia'] === 'Pendiente' ? 'por asistir' : htmlspecialchars($cp['asistencia']) ?></strong>
+                </li>
+              <?php endforeach; ?>
+            </ul>
+          <?php endif; ?>
+
+          <?php if ($post['estado'] === 'En Proceso' && !$resEval && (int)$post['orden'] === 2): ?>
+            <div class="aviso-portal">
+              <span>Tienes una <strong>evaluación pendiente</strong>. Ríndela desde aquí, con tu código y tu DNI.</span>
+              <a class="btn btn-azul" href="evaluacion.php?codigo=<?= urlencode($codigo) ?>" style="margin-left:12px">Rendir mi evaluación</a>
+            </div>
+          <?php elseif ($resEval): ?>
+            <p class="intro">Tu evaluación: <strong><?= (int)$resEval['puntaje'] ?>%</strong>
+              (<?= (int)$resEval['aprobado'] ? 'aprobada' : 'no aprobada' ?>).</p>
           <?php endif; ?>
 
           <div class="proceso" style="box-shadow:none;border:none;padding:18px 0 0">

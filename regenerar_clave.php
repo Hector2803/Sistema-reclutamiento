@@ -61,9 +61,9 @@ try {
     // Envío de la clave temporal al correo real de la persona
     $correoReal = (string)($objetivo['correo'] ?? '');
     if ($correoReal !== '') {
-        $html = correoCredenciales($objetivo['nombre'], $objetivo['usuario'], $temporal, true);
+        $html = correoCredenciales($objetivo['nombre'], $objetivo['usuario'], $temporal, true, true);
         [$okEnv, $msgEnv] = correoEnviar(
-            $pdo, $correoReal, 'Tu contraseña temporal · SSR A365', $html, (int)$objetivo['id']
+            $pdo, $correoReal, 'Tu acceso al sistema de reclutamiento de A365 fue actualizado', $html, (int)$objetivo['id']
         );
     } else {
         [$okEnv, $msgEnv] = [false, 'la persona no tiene correo real registrado'];

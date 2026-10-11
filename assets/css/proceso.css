@@ -1,0 +1,41 @@
+/* Gestión del proceso del candidato */
+.pr-pasos{display:flex;gap:0;margin:6px 0 18px;background:#fff;border:1px solid var(--borde);border-radius:14px;padding:14px 10px;overflow-x:auto}
+.pr-paso{flex:1;min-width:130px;text-align:center;position:relative;padding:0 6px}
+.pr-paso::before{content:"";position:absolute;top:16px;left:-50%;width:100%;height:3px;background:#e3e8f1;z-index:0}
+.pr-paso:first-child::before{display:none}
+.pr-paso.hecho::before,.pr-paso.activo::before{background:#22a06b}
+.pr-bola{position:relative;z-index:1;width:34px;height:34px;border-radius:50%;margin:0 auto 6px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;background:#e9edf5;color:#7a8499}
+.pr-paso.hecho .pr-bola{background:#22a06b;color:#fff}
+.pr-paso.activo .pr-bola{background:var(--azul);color:#fff;box-shadow:0 0 0 4px #dbe7fb}
+.pr-paso.descartado .pr-bola{background:#e30613;color:#fff;box-shadow:0 0 0 4px #fde0e2}
+.pr-paso strong{display:block;font-size:12.5px;line-height:1.25;color:#1c2431}
+.pr-paso.pend strong{color:#8a93a6;font-weight:600}
+.pr-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:1000px){.pr-grid{grid-template-columns:1fr}}
+.pr-card{background:#fff;border:1px solid var(--borde);border-radius:14px;padding:18px 20px;margin-bottom:16px}
+.pr-card h3{font-size:16px;margin:0 0 12px;color:#0b3d91}
+.pr-filtro{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid #eef1f6}
+.pr-filtro:first-of-type{border-top:none}
+.pr-filtro .ic{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0}
+.pr-filtro .ic.ok{background:#e3f6ec;color:#16803c}.pr-filtro .ic.mal{background:#fde8ea;color:#b5121b}.pr-filtro .ic.pen{background:#fff3dc;color:#b26a00}
+.pr-filtro .tx{flex:1;font-size:14px}.pr-filtro .tx small{display:block;color:#6b7488;margin-top:2px}
+.pr-filtro label{display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer}
+.pr-filtro input[type=checkbox]{width:18px;height:18px;accent-color:var(--azul)}
+.pr-form{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:8px}
+.pr-form .full{grid-column:1/-1}
+.pr-form label{display:block;font-size:12.5px;font-weight:600;color:#4b5568;margin-bottom:4px}
+.pr-form input,.pr-form select{width:100%;padding:10px 12px;border:1px solid var(--borde);border-radius:10px;font-size:14px;background:#fff;font-family:inherit}
+.pr-lista{width:100%;border-collapse:collapse;font-size:13.5px}
+.pr-lista th{text-align:left;color:#6b7488;font-weight:600;padding:8px 6px;border-bottom:1px solid #eef1f6;font-size:12px;text-transform:uppercase}
+.pr-lista td{padding:9px 6px;border-bottom:1px solid #f3f5f9;vertical-align:middle}
+.pr-chip{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700}
+.pr-chip.ok{background:#e3f6ec;color:#16803c}.pr-chip.mal{background:#fde8ea;color:#b5121b}.pr-chip.pen{background:#fff3dc;color:#b26a00}.pr-chip.neu{background:#eaf1fd;color:#0b3d91}
+.pr-acciones{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.pr-btn{border:1px solid var(--borde);background:#fff;border-radius:9px;padding:7px 12px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+.pr-btn.ok{background:#e3f6ec;border-color:#b6e3c8;color:#16803c}.pr-btn.mal{background:#fde8ea;border-color:#f5c0c4;color:#b5121b}
+.pr-nota{font-size:13.5px;color:#4b5568;margin:0 0 8px}
+.pr-avance{border:2px solid #b6e3c8;background:#f1fbf5}
+.pr-bloqueo{border:2px solid #f3d9a4;background:#fff9ec}
+.aviso{padding:12px 16px;border-radius:10px;font-size:14px;font-weight:500;margin-bottom:16px}
+.aviso-ok{background:#e8f7ee;color:#16803c;border:1px solid #b7e2c7}
+.aviso-error{background:#fdecec;color:#b5121b;border:1px solid #f5c2c5}

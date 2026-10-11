@@ -48,9 +48,12 @@ $dump = '"' . RUTA_MYSQL_BIN . 'mysqldump.exe"' . $credc . ' ' . escapeshellarg(
       . ' --result-file=' . escapeshellarg($rutaAuto) . ' 2>&1';
 @exec($dump, $o1, $r1);
 
-// 3) Restaurar: mysql db -e "source archivo"
+// 3) Restaurar: mysql db < archivo
+//    Se usa redirección de entrada (y no «-e "source ..."») porque con «source» el cliente
+//    devuelve código 0 aunque el archivo tenga errores de SQL y la restauración se
+//    registraría como «Exitosa» sin serlo.
 $mysql = '"' . RUTA_MYSQL_BIN . 'mysql.exe"' . $credc . ' ' . escapeshellarg(DB_NOMBRE)
-       . ' -e ' . escapeshellarg('source ' . str_replace('\\','/',$rutaSubido)) . ' 2>&1';
+       . ' < ' . escapeshellarg($rutaSubido) . ' 2>&1';
 $salida = []; $ret = 0;
 @exec($mysql, $salida, $ret);
 

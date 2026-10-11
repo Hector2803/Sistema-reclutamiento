@@ -5,6 +5,8 @@
    la tabla campanas (publicadas) + areas + palabras_clave.
    ============================================================ */
 require_once __DIR__ . '/../config/conexion.php';
+require_once __DIR__ . '/../includes/migrar_flujo.php';
+migrarFlujoSiHaceFalta();
 
 /** Divide un TEXT con un punto por línea en un arreglo de ítems. */
 function lineasTexto(?string $txt): array {

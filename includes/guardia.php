@@ -19,3 +19,8 @@ if (!empty($_SESSION['debe_cambiar_clave'])) {
         exit;
     }
 }
+
+/* Si falta la tabla de capacitaciones (código nuevo con base antigua), aplica sql/flujo_proceso.sql */
+require_once __DIR__ . '/../config/conexion.php';
+require_once __DIR__ . '/migrar_flujo.php';
+migrarFlujoSiHaceFalta();

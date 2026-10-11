@@ -1,10 +1,10 @@
 <?php
 /* ============================================================
-   SSR - A365 | Aplicar evaluación al candidato (HU-08 / RF-09)
-   - Toma preguntas al azar del banco del área de la campaña
-   - Cronómetro con envío automático al terminar el tiempo
-   - Las respuestas correctas nunca se envían al navegador
-   - Si ya rindió, muestra el resultado y el detalle
+   SSR - A365 | Resultado de la evaluación del candidato (HU-08 / RF-09)
+   SOLO LECTURA: el postulante rinde el test en el portal público
+   (portal/evaluacion.php) con su código de seguimiento y DNI.
+   Aquí el personal únicamente consulta el resultado y el detalle.
+   El reclutador solo ve candidatos de su área.
    ============================================================ */
 $tituloPagina = 'Evaluación del candidato';
 $activo = 'candidatos';
@@ -12,6 +12,7 @@ $estilosExtra = ['assets/css/candidatos.css', 'assets/css/usuarios.css', 'assets
 
 require_once __DIR__ . '/includes/guardia.php';
 require_once __DIR__ . '/config/conexion.php';
+require_once __DIR__ . '/includes/alcance.php';
 $pdo = obtenerConexion();
 
 $postId = (int)($_GET['post'] ?? 0);
@@ -32,10 +33,10 @@ $st->execute([':id' => $postId]);
 $post = $st->fetch();
 if (!$post) { $_SESSION['flash_error'] = 'La postulación no existe.'; header('Location: candidatos.php'); exit; }
 
-/* Alcance: el reclutador solo evalúa a sus candidatos */
+/* Alcance: el reclutador solo consulta candidatos de su área */
 $esSupervisor = in_array(($_SESSION['usuario_rol'] ?? ''), ['Supervisor','Administrador'], true);
-if (!$esSupervisor && (int)$post['reclutador_id'] !== (int)($_SESSION['usuario_id'] ?? 0)) {
-    $_SESSION['flash_error'] = 'Solo puedes evaluar a los candidatos asignados a ti.';
+if (!puedeGestionarPostulacion($pdo, $postId)) {
+    $_SESSION['flash_error'] = 'Solo puedes consultar candidatos de tu área.';
     header('Location: candidatos.php'); exit;
 }
 
@@ -63,54 +64,12 @@ if ($eval) {
     }
 }
 
-/* Preparar el examen (se guarda en sesión para que recargar no cambie las preguntas) */
-$preguntas = []; $restante = 0; $motivoBloqueo = '';
-if (!$resultado) {
-    if (!$eval) {
-        $motivoBloqueo = 'El área "' . $post['area'] . '" aún no tiene una evaluación configurada.';
-    } elseif ($post['estado'] !== 'En Proceso') {
-        $motivoBloqueo = 'El candidato está en estado "' . $post['estado'] . '" y no puede rendir la evaluación.';
-    } else {
-        $clave = 'examen_' . $postId;
-        $ex = $_SESSION[$clave] ?? null;
-        if (!$ex || (int)$ex['eval'] !== (int)$eval['id']) {
-            $st = $pdo->prepare("SELECT id FROM preguntas WHERE evaluacion_id = :e ORDER BY RAND() LIMIT " . (int)$eval['total_preguntas']);
-            $st->execute([':e' => $eval['id']]);
-            $ids = array_map('intval', array_column($st->fetchAll(), 'id'));
-            $orden = [];
-            $stO = $pdo->prepare("SELECT id FROM opciones WHERE pregunta_id = :p");
-            foreach ($ids as $pid) {
-                $stO->execute([':p' => $pid]);
-                $ops = array_map('intval', array_column($stO->fetchAll(), 'id'));
-                shuffle($ops);
-                $orden[$pid] = $ops;
-            }
-            $ex = ['eval' => (int)$eval['id'], 'preguntas' => $ids, 'opciones' => $orden, 'inicio' => time()];
-            $_SESSION[$clave] = $ex;
-        }
-        if (!$ex['preguntas']) {
-            $motivoBloqueo = 'El banco de preguntas del área está vacío.';
-            unset($_SESSION[$clave]);
-        } else {
-            $stQ = $pdo->prepare("SELECT enunciado FROM preguntas WHERE id = :id");
-            $stT = $pdo->prepare("SELECT texto FROM opciones WHERE id = :id");
-            foreach ($ex['preguntas'] as $pid) {
-                $stQ->execute([':id' => $pid]);
-                $ops = [];
-                foreach ($ex['opciones'][$pid] as $oid) { $stT->execute([':id' => $oid]); $ops[] = ['id' => $oid, 'texto' => $stT->fetch()['texto']]; }
-                $preguntas[] = ['id' => $pid, 'enunciado' => $stQ->fetch()['enunciado'], 'opciones' => $ops];
-            }
-            $restante = max(0, (int)$eval['tiempo_limite'] * 60 - (time() - (int)$ex['inicio']));
-        }
-    }
-}
-
 require_once __DIR__ . '/includes/layout_top.php';
 ?>
 
 <div class="panel-encabezado">
   <div>
-    <h2>Evaluación: <?= htmlspecialchars($eval['nombre'] ?? $post['area']) ?></h2>
+    <h2>Resultado de la evaluación: <?= htmlspecialchars($eval['nombre'] ?? $post['area']) ?></h2>
     <p><?= htmlspecialchars($post['nombres']) ?> · DNI <?= htmlspecialchars($post['dni']) ?> · <?= htmlspecialchars($post['puesto']) ?></p>
   </div>
   <div class="acciones-panel"><a class="btn-linea" href="candidatos.php">Volver a candidatos</a></div>
@@ -143,54 +102,20 @@ require_once __DIR__ . '/includes/layout_top.php';
     </ol>
   </section>
 
-<?php elseif ($motivoBloqueo): ?>
-  <section class="tarjeta"><p class="ev-nota"><?= htmlspecialchars($motivoBloqueo) ?></p>
+<?php else: ?>
+  <section class="tarjeta">
+    <p class="ev-nota">
+      <?php if (!$eval): ?>
+        El área «<?= htmlspecialchars($post['area']) ?>» aún no tiene una evaluación configurada.
+      <?php elseif ($post['estado'] !== 'En Proceso'): ?>
+        El candidato está en estado «<?= htmlspecialchars($post['estado']) ?>» y no rindió la evaluación.
+      <?php else: ?>
+        <strong>Evaluación pendiente.</strong> El postulante la rinde por su cuenta desde el portal de empleo,
+        ingresando su código de seguimiento y su DNI. El resultado aparecerá aquí automáticamente cuando la envíe.
+      <?php endif; ?>
+    </p>
     <?php if ($esSupervisor && !$eval): ?><a class="btn btn-azul" href="banco_preguntas.php?area=<?= (int)$post['area_id'] ?>">Configurar evaluación del área</a><?php endif; ?>
   </section>
-
-<?php else: ?>
-  <!-- ===== Examen ===== -->
-  <div class="ev-barra">
-    <span><?= count($preguntas) ?> preguntas · Nota mínima <?= (int)$eval['nota_minima'] ?>%</span>
-    <span class="ev-reloj" id="reloj">--:--</span>
-  </div>
-  <form action="calificar_evaluacion.php" method="POST" id="formExamen">
-    <input type="hidden" name="postulacion_id" value="<?= $postId ?>">
-    <?php foreach ($preguntas as $n => $q): ?>
-      <section class="tarjeta ev-q">
-        <p class="ev-q-tit"><span><?= $n + 1 ?>.</span> <?= htmlspecialchars($q['enunciado']) ?></p>
-        <?php foreach ($q['opciones'] as $op): ?>
-          <label class="ev-q-opc">
-            <input type="radio" name="respuestas[<?= $q['id'] ?>]" value="<?= $op['id'] ?>">
-            <span><?= htmlspecialchars($op['texto']) ?></span>
-          </label>
-        <?php endforeach; ?>
-      </section>
-    <?php endforeach; ?>
-    <div class="ev-enviar"><button class="btn btn-azul" type="submit">Finalizar y calificar</button></div>
-  </form>
-
-  <script>
-  (function () {
-    var restante = <?= (int)$restante ?>, form = document.getElementById('formExamen'),
-        reloj = document.getElementById('reloj'), enviado = false;
-    function enviar() { if (!enviado) { enviado = true; form.submit(); } }
-    function pintar() {
-      var m = Math.floor(restante / 60), s = restante % 60;
-      reloj.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
-      reloj.classList.toggle('poco', restante <= 60);
-    }
-    pintar();
-    if (restante <= 0) { enviar(); return; }
-    setInterval(function () { restante--; pintar(); if (restante <= 0) enviar(); }, 1000);
-    form.addEventListener('submit', function (e) {
-      if (enviado) return;
-      var total = <?= count($preguntas) ?>, resp = form.querySelectorAll('input[type=radio]:checked').length;
-      if (resp < total && !confirm('Hay ' + (total - resp) + ' pregunta(s) sin responder. ¿Finalizar de todos modos?')) { e.preventDefault(); return; }
-      enviado = true;
-    });
-  })();
-  </script>
 <?php endif; ?>
 
 <?php require_once __DIR__ . '/includes/layout_bottom.php'; ?>

@@ -216,7 +216,7 @@ Todo el portal es de solo diseño por ahora (los formularios no guardan);
 requiere conectar la base de datos para funcionar.
 
 ------------------------------------------------------------
-NUEVO: Base de datos UNIFICADA (SARA + EVALUAR)
+NUEVO: Base de datos unificada (reclutamiento + evaluaciones)
 ------------------------------------------------------------
 Archivo: sql/ssr_bd_completa.sql   (base: ssr_a365)
 
@@ -226,7 +226,7 @@ Importar en phpMyAdmin o MySQL Workbench.
 16 tablas:
   CATÁLOGOS: areas, roles, origenes, etapas, motivos_descarte
   USUARIOS:  usuarios (con rol_id y area_id asignada)
-  SARA:      campanas, blacklist, postulantes (por DNI),
+  RECLUTAMIENTO: campanas, blacklist, postulantes (por DNI),
              postulaciones, historial_etapas
   EVALUAR:   evaluaciones, preguntas, opciones,
              resultados_eval, respuestas
@@ -238,14 +238,14 @@ Piezas clave del diseño:
   - historial_etapas guarda cada movimiento con su MOTIVO de descarte
     (obligatorio si es descarte) -> alimenta el embudo de Reportes.
   - motivos_descarte están ligados a la etapa donde ocurren.
-  - resultados_eval liga la nota del test a la POSTULACIÓN (une SARA+EVALUAR):
+  - resultados_eval liga la nota del test a la POSTULACIÓN:
     al aprobar/reprobar, mueve o descarta la etapa automáticamente.
   - usuarios.area_id permite que cada reclutador vea solo su campaña.
 
 Etapas del embudo (flujo real A365):
-  Postulación -> Validación (SARA) -> Contacto telefónico ->
-  Entrevista/Role Play -> Acepta propuesta -> Evaluación (test) ->
-  Antecedentes -> Ingresa
+  Postulación -> Contacto telefónico -> Entrevista/Role Play ->
+  Acepta propuesta -> Evaluación (test) -> Antecedentes -> Ingresa
+  (la validación del DNI es automática al registrar; no es una etapa)
 
 Usuarios de prueba (clave: admin123):
   admin (Administrador), lais (Coordinadora), mateo (Supervisor),
@@ -311,7 +311,7 @@ AJUSTES DE INTERFAZ (aplican a TODAS las vistas)
   candidatos.css (hojas compartidas).
 
 ------------------------------------------------------------
-NÚCLEO: Registro de postulantes por DNI (tipo SARA)
+NÚCLEO: Registro de postulantes por DNI
 ------------------------------------------------------------
 candidatos.php ahora:
   - Lista las POSTULACIONES reales (postulante + campaña + etapa).
@@ -324,7 +324,7 @@ registrar_postulante.php (NUEVO) valida en este orden:
   2) BLACKLIST: si el DNI está en lista negra -> rechaza.
   3) Postulante: si ya existe (por DNI) lo reutiliza; si no, lo crea.
   4) ACTIVO EN OTRA CAMPAÑA: si ya tiene postulación En Proceso en
-     otra campaña -> rechaza (regla SARA).
+     otra campaña -> rechaza.
   5) DUPLICADO: si ya postuló a ESTA campaña -> rechaza.
   6) Crea la postulación en etapa "Postulación", con código de
      seguimiento (A365-XXXXX) y primer registro en historial_etapas.
@@ -358,7 +358,7 @@ HU-04 Registrar candidato y su CV (RF-04):
   candidatos.php -> el modal ahora acepta CARGA DE CV (PDF/DOC/DOCX).
   registrar_postulante.php -> valida tipo/tamaño del CV (máx 5MB),
   lo guarda en uploads/cv/ y asocia su ruta al postulante.
-  (Sigue aplicando las validaciones SARA: DNI, blacklist, duplicados.)
+  (Sigue aplicando las validaciones automáticas: DNI, blacklist, duplicados.)
 
 IMPORTANTE: la carpeta uploads/cv/ debe tener permisos de escritura.
 
@@ -519,12 +519,11 @@ Nuevos archivos:
                              configura por área nota mínima, tiempo y
                              N.º de preguntas; agrega/elimina preguntas.
   guardar_pregunta.php    -> acciones del banco (con validaciones).
-  rendir_evaluacion.php   -> el candidato rinde la prueba: preguntas al
-                             azar, cronómetro con envío automático; si ya
-                             rindió, muestra el resultado y el detalle.
-  calificar_evaluacion.php-> califica EN EL SERVIDOR (las respuestas
-                             correctas nunca llegan al navegador).
-                             Aprobado -> etapa "Evaluación (test)".
+  rendir_evaluacion.php   -> (HISTÓRICO, ahora SOLO LECTURA) muestra el
+                             resultado y el detalle. Ver CAMBIOS RECIENTES.
+  (calificar_evaluacion.php se eliminó: la calificación en el servidor
+   ahora está en portal/evaluacion.php)
+                             Aprobado -> pasa a "Validación (datos, CV y documentos)".
                              No aprobado -> Descartado con el motivo
                              "No alcanzó el puntaje mínimo (70%)".
   assets/css/evaluaciones.css
@@ -578,3 +577,50 @@ backups/ por una comparación de rutas sin normalizar, y crecía sin
 control (superó 600 MB en las pruebas). Ya corregido con realpath();
 revisa el tamaño de backups/ si vienes de una copia anterior del
 proyecto.
+
+
+============================================================
+CAMBIOS RECIENTES (versión 1.0.x)
+============================================================
+0) FLUJO DEL PROCESO DE SELECCIÓN (6 ETAPAS)
+   Postulación -> Evaluación (test) -> Validación (datos, CV y documentos)
+   -> Entrevista presencial -> Capacitaciones (máx. 5) -> Proceso finalizado.
+   - Cada paso exige cumplir el anterior (reglas en includes/flujo.php).
+   - Validación: test aprobado + CV con >= 50 % de coincidencia (el sistema lo
+     analiza) + datos y documentos verificados por el reclutador.
+   - Entrevista presencial: el reclutador la agenda (fecha, hora, lugar) y
+     luego marca que se realizó correctamente.
+   - Capacitaciones: hasta 5, agendadas una a una; se registra la asistencia.
+     Si no asiste a una, se descarta con el motivo "Inasistencia a
+     capacitación", visible en Reportes. Si asiste a todas, finaliza el proceso.
+   - Pantalla de gestión: Candidatos > ícono del ojo (proceso.php).
+   - Tablero Kanban rehecho: columnas del flujo, validado en el servidor,
+     Exportar (CSV), Registrar candidato, Personalizar etapas, Filtros y
+     engranaje de configuración.
+   - Base de datos NUEVA: ejecutar los 10 scripts de sql/ en orden
+     (el último es flujo_proceso.sql).
+   - Base de datos EXISTENTE (local u hosting): ejecutar UNA vez
+     sql/flujo_proceso.sql desde phpMyAdmin > SQL. Es idempotente y no
+     incluye USE, por lo que sirve también en el hosting.
+   - La etapa externa "Validación (SARA)" ya no existe.
+
+2) EL TEST LO RINDE EL POSTULANTE EN EL PORTAL (fuera del panel interno)
+   - portal/evaluacion.php: el postulante entra con su CÓDIGO DE
+     SEGUIMIENTO + DNI, responde con cronómetro y el servidor califica.
+     Aprobado -> pasa a "Validación (datos, CV y documentos)". No aprobado -> Descartado con
+     el motivo "No alcanzó el puntaje mínimo (70%)".
+   - Tras 5 intentos fallidos de DNI en la misma sesión se bloquea el acceso.
+   - Al postulante solo se le muestra su puntaje y si aprobó (no el detalle
+     de las respuestas, para no filtrar el banco de preguntas).
+   - El panel interno (rendir_evaluacion.php) es SOLO LECTURA: muestra el
+     resultado y el detalle. Ya no hay botón para aplicar el test.
+   - portal/seguimiento.php muestra "Rendir mi evaluación" mientras esté
+     pendiente, y también las entrevistas programadas.
+
+3) ALCANCE POR ÁREA PARA EL RECLUTADOR
+   - El reclutador ve solo lo de SU ÁREA (usuarios.area_id): Candidatos,
+     Tablero Kanban, Entrevistas, Dashboard y Reportes. Un reclutador sin
+     área asignada no ve datos. Supervisor y Administrador ven todo.
+   - Se valida también en el servidor: mover etapa, registrar candidato,
+     programar/editar/cambiar estado de entrevistas y consultar resultados.
+   - Código común: includes/alcance.php.

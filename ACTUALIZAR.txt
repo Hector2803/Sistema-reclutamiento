@@ -1,0 +1,4 @@
+ACTUALIZACION v1.0.0 (flujo 6 etapas; Kanban; sin SARA; correo con diseno A365)
+1) Administracion > Mantenimiento > Version del sistema: numero 1.0.0, subir este .zip.
+2) Abrir cualquier pagina: la base se convierte sola (o importar sql/flujo_proceso.sql).
+3) Administracion > Correo > "Enviar prueba"; luego crear un usuario o regenerar una clave.

@@ -26,7 +26,7 @@ if ($qMod !== '') {
 <!-- ===== Cabecera ===== -->
 <header class="nav">
   <div class="contenedor nav-in">
-    <a href="index.php" class="nav-logo"><img src="../assets/img/logo_a365.png" alt="A365"></a>
+    <a href="index.php" class="nav-logo"><img src="../assets/img/logo_a365_fiestas.png" alt="A365"></a>
     <nav class="nav-links">
       <a href="index.php" class="on">Bolsa de Trabajo</a>
       <a href="#">Quiénes somos</a>
@@ -141,7 +141,7 @@ if ($qMod !== '') {
 <footer class="footer">
   <div class="contenedor footer-in">
     <div>
-      <img src="../assets/img/logo_a365.png" alt="A365" style="background:#fff;padding:8px 12px;border-radius:8px">
+      <img src="../assets/img/logo_a365_fiestas.png" alt="A365" style="background:#fff;padding:8px 12px;border-radius:8px">
       <p>A365 · Sistema de Reclutamiento. Talento que impulsa tu empresa.</p>
     </div>
     <div class="cols">

@@ -35,7 +35,7 @@ if (isset($_GET['cerrada']) && $error === '') {
 
     <!-- ============ PANEL IZQUIERDO (branding) ============ -->
     <section class="panel-izquierdo">
-      <img src="assets/img/logo_a365.png" alt="A365" class="logo-marca">
+      <img src="assets/img/logo_a365_fiestas.png" alt="A365" class="logo-marca">
 
       <h1>Sistema de <strong>Reclutamiento</strong></h1>
       <div class="linea-roja"></div>
@@ -59,7 +59,7 @@ if (isset($_GET['cerrada']) && $error === '') {
 
     <!-- ============ PANEL DERECHO (formulario) ============ -->
     <section class="panel-derecho">
-      <img src="assets/img/logo_a365.png" alt="A365" class="logo-form">
+      <img src="assets/img/logo_a365_fiestas.png" alt="A365" class="logo-form">
       <h2>Bienvenido</h2>
       <p class="instruccion">Ingresa tus credenciales para continuar</p>
 

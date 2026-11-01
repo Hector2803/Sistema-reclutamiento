@@ -84,7 +84,7 @@ if ($codigo !== '') {
 
 <header class="nav">
   <div class="contenedor nav-in">
-    <a href="index.php" class="nav-logo"><img src="../assets/img/logo_a365.png" alt="A365"></a>
+    <a href="index.php" class="nav-logo"><img src="../assets/img/logo_a365_fiestas.png" alt="A365"></a>
     <nav class="nav-links">
       <a href="index.php">Bolsa de Trabajo</a>
       <a href="#">Quiénes somos</a>

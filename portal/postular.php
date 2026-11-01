@@ -150,7 +150,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <header class="nav">
   <div class="contenedor nav-in">
-    <a href="index.php" class="nav-logo"><img src="../assets/img/logo_a365.png" alt="A365"></a>
+    <a href="index.php" class="nav-logo"><img src="../assets/img/logo_a365_fiestas.png" alt="A365"></a>
     <nav class="nav-links">
       <a href="index.php">Bolsa de Trabajo</a>
       <a href="#">Quiénes somos</a>
@@ -168,7 +168,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div class="auth-wrap">
       <div class="auth-card">
-        <div class="lg"><img src="../assets/img/logo_a365.png" alt="A365"></div>
+        <div class="lg"><img src="../assets/img/logo_a365_fiestas.png" alt="A365"></div>
         <h1>Postula a <?= htmlspecialchars($e['titulo']) ?></h1>
         <p class="sub">Completa tus datos. Al finalizar recibirás tu <strong>código de seguimiento</strong>.</p>
 

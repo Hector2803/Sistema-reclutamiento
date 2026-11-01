@@ -84,7 +84,7 @@ $menu = [
   <!-- ================= BARRA LATERAL ================= -->
   <aside class="sidebar">
     <div class="sidebar-logo">
-      <img src="assets/img/logo_a365.png" alt="A365">
+      <img src="assets/img/logo_a365_fiestas.png" alt="A365">
     </div>
 
     <nav class="menu">

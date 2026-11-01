@@ -1,14 +1,14 @@
 <?php
 /* ============================================================
    Política de contraseñas (CP-08 reforzado)
-   Mínimo 6 caracteres, con al menos una letra y un número.
+   Mínimo 10 caracteres, con al menos una letra y un número.
    Se usa en: alta de usuarios, cambio forzado y portal público.
    ============================================================ */
 
 function validarClave(string $clave): ?string
 {
     if ($clave === '')                     return 'La contraseña es obligatoria.';
-    if (strlen($clave) < 6)                return 'La contraseña debe tener al menos 6 caracteres.';
+    if (strlen($clave) < 10)                return 'La contraseña debe tener al menos 10 caracteres.';
     if (!preg_match('/[A-Za-z]/', $clave)) return 'La contraseña debe incluir al menos una letra.';
     if (!preg_match('/[0-9]/', $clave))    return 'La contraseña debe incluir al menos un número.';
     return null;

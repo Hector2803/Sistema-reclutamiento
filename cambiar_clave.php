@@ -90,7 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div class="reglas">
       <strong>La contraseña debe:</strong>
-      <br>Tener al menos <strong>6 caracteres</strong>.
+      <br>Tener al menos <strong>10 caracteres</strong>.
       <br>Incluir <strong>una letra</strong> y <strong>un número</strong>.
       <br>Ser distinta de la actual.
     </div>
@@ -98,11 +98,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <form method="POST">
       <div class="campo-clave">
         <label for="clave_nueva">Nueva contraseña</label>
-        <input type="password" id="clave_nueva" name="clave_nueva" required minlength="6" maxlength="100" autofocus>
+        <input type="password" id="clave_nueva" name="clave_nueva" required minlength="10" maxlength="100" autofocus>
       </div>
       <div class="campo-clave">
         <label for="clave_repite">Repite la nueva contraseña</label>
-        <input type="password" id="clave_repite" name="clave_repite" required minlength="6" maxlength="100">
+        <input type="password" id="clave_repite" name="clave_repite" required minlength="10" maxlength="100">
       </div>
       <button class="btn-guardar" type="submit">Guardar contraseña</button>
     </form>

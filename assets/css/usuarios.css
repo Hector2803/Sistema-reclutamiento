@@ -235,3 +235,25 @@
 
 /* Modal de usuario: un solo campo cuando no hay contraseña */
 .mf-fila.una{grid-template-columns:1fr}
+
+/* ============================================================
+   Lista de usuarios compacta: 6 iconos de accion en una fila
+   ============================================================ */
+.tabla-cand .col-check{width:26px;padding-left:6px;padding-right:2px}
+.tabla-cand th{padding:0 6px 9px}
+.tabla-cand td{padding:6px 6px}
+.tabla-cand .col-email{font-size:12.5px;color:var(--texto-2);white-space:nowrap}
+.tabla-cand .usuario-cel{gap:8px}
+.tabla-cand .usuario-cel .cand-avatar{width:28px;height:28px;font-size:11px}
+.tabla-cand .acciones{gap:3px;flex-wrap:nowrap}
+.tabla-cand .acciones form{margin:0;display:flex}
+.tabla-cand .icobtn{width:27px;height:27px;border-radius:7px;padding:0}
+.tabla-cand .icobtn svg{width:14px;height:14px}
+.icobtn.i-ok{color:var(--verde)}
+.icobtn.i-ok:hover{background:var(--verde-suave);color:var(--verde)}
+.icobtn.i-aviso{color:#b7791f}
+.icobtn.i-aviso:hover{background:#fff4e5;color:#b7791f}
+.icobtn.i-peligro{color:var(--rojo)}
+.icobtn.i-peligro:hover{background:#fdecec;color:var(--rojo)}
+.icobtn:disabled{opacity:.3;cursor:not-allowed}
+.icobtn:disabled:hover{background:#fff;color:var(--verde)}

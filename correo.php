@@ -57,6 +57,7 @@ require_once __DIR__ . '/includes/layout_top.php';
   <a href="usuarios.php">Usuarios</a>
   <a href="correo.php" class="on">Correo</a>
   <a href="mantenimiento.php">Mantenimiento</a>
+  <a href="backup.php">Backup</a>
 </div>
 
 <?php if ($flashOk): ?><script>mostrarToast(<?= json_encode($flashOk, JSON_UNESCAPED_UNICODE) ?>, 'ok');</script><?php endif; ?>

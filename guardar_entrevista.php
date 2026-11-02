@@ -29,7 +29,7 @@ try {
         $existe->execute([':id' => $id]);
         $entExiste = $existe->fetch();
         if (!$entExiste) throw new Exception('La entrevista ya no existe.');
-        if (!puedeGestionarPostulacion($pdo, (int)$entExiste['postulacion_id'])) {
+        if (!puedeGestionarPostulacion($pdo, (int)$entExiste['postulacion_id']) && !esEntrevistadorDe($pdo, $id)) {
             throw new Exception('Solo puedes gestionar entrevistas de candidatos de tu área.');
         }
 

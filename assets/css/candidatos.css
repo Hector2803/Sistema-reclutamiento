@@ -150,3 +150,4 @@
 .carga-barra>div{height:100%;background:linear-gradient(90deg,var(--azul-claro),var(--azul));border-radius:6px}
 .carga-det{display:flex;gap:10px;margin-top:6px;font-size:11.5px}
 .d-proc{color:#d98a1a}.d-sel{color:var(--verde)}.d-desc{color:var(--rojo)}
+tr[hidden]{display:none !important}

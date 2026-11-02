@@ -33,6 +33,23 @@ function sqlAlcanceCampana(string $columnaArea = 'area_id'): string {
     return " AND $columnaArea = $a";
 }
 
+/* Entrevistas: el Reclutador ve las de su área Y las que tiene asignadas como entrevistador
+   (aunque el candidato sea de otra área). $colEntrevistador = en.entrevistador_id */
+function sqlAlcanceEntrevista(string $columnaCampana = 'et.campana_id', string $colEntrevistador = 'en.entrevistador_id'): string {
+    if (!alcanceEsReclutador()) return '';
+    $u = (int)($_SESSION['usuario_id'] ?? 0);
+    $a = alcanceAreaId();
+    $porArea = $a > 0 ? "$columnaCampana IN (SELECT id FROM campanas WHERE area_id = $a)" : '1=0';
+    return " AND ($porArea OR $colEntrevistador = $u)";
+}
+
+/* ¿El usuario de la sesión es el entrevistador asignado a esta entrevista? */
+function esEntrevistadorDe(PDO $pdo, int $entrevistaId): bool {
+    $st = $pdo->prepare("SELECT 1 FROM entrevistas WHERE id = :i AND entrevistador_id = :u LIMIT 1");
+    $st->execute([':i' => $entrevistaId, ':u' => (int)($_SESSION['usuario_id'] ?? 0)]);
+    return (bool)$st->fetch();
+}
+
 /* ¿El usuario de la sesión puede ver/gestionar esta postulación? */
 function puedeGestionarPostulacion(PDO $pdo, int $postulacionId): bool {
     if (!alcanceEsReclutador()) return true;

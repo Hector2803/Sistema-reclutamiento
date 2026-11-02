@@ -1,0 +1,147 @@
+/* ============================================================
+   SSR - A365 | Diseño adaptable (móvil y tableta)
+   Se carga al final en layout_top.php, después de los estilos de cada página.
+   ≥ 901 px  : escritorio (sin cambios)
+   ≤ 900 px  : menú lateral como cajón + barra inferior + tarjetas
+   ≤ 480 px  : ajustes finos de teléfono
+   ============================================================ */
+
+/* Elementos que solo existen en móvil: ocultos en escritorio */
+.btn-hamb,.nav-inferior,.fondo-menu,.sidebar-cerrar,.marca-movil{display:none}
+
+@media (max-width:900px){
+  html{-webkit-text-size-adjust:100%}
+  body{overflow-x:hidden}
+
+  /* ---------- Barra superior ---------- */
+  .topbar{padding:10px 14px;gap:12px}
+  .btn-hamb{display:flex;background:none;border:0;padding:4px;color:var(--azul);cursor:pointer}
+  .btn-hamb svg{width:26px;height:26px}
+  .topbar-marca h1{font-size:16px;white-space:normal;line-height:1.15}
+  .topbar-marca h1 .sep{display:none}
+  .topbar-marca h1 em{display:block;font-size:13.5px;font-weight:600;margin-top:1px}
+  .topbar-marca p{display:none}
+  .topbar-marca{display:flex;align-items:center;gap:12px;min-width:0}
+  .marca-movil{display:block;height:34px;width:auto;padding-right:12px;border-right:1px solid var(--borde)}
+  .topbar-acciones{gap:14px}
+  .perfil-datos{display:none}
+  .avatar{width:38px;height:38px}
+
+  /* ---------- Menú lateral = cajón ---------- */
+  .sidebar{
+    position:fixed;top:0;left:0;bottom:0;height:auto;width:262px;z-index:60;
+    transform:translateX(-102%);transition:transform .22s ease;
+    box-shadow:none;overflow-y:auto;
+  }
+  .menu-abierto .sidebar{transform:translateX(0);box-shadow:0 0 40px rgba(16,28,54,.35)}
+  .fondo-menu{display:block;position:fixed;inset:0;background:rgba(16,28,54,.45);z-index:55;opacity:0;pointer-events:none;transition:opacity .2s}
+  .menu-abierto .fondo-menu{opacity:1;pointer-events:auto}
+  .btn-contraer{display:none}
+  .sidebar-logo{display:flex;justify-content:space-between;align-items:center}
+  .sidebar-cerrar{display:flex;background:none;border:0;color:var(--texto-3);padding:6px;cursor:pointer}
+  .sidebar-cerrar svg{width:22px;height:22px}
+  .menu-contraido .sidebar{width:262px}
+  .menu-contraido .menu-item span{display:inline}
+  .menu-contraido .menu-item{justify-content:flex-start}
+  .menu-item{padding:12px 14px;font-size:15px}
+
+  /* ---------- Contenido ---------- */
+  .principal{padding:16px 14px calc(84px + env(safe-area-inset-bottom))}
+  .panel-encabezado{gap:12px}
+  .panel-encabezado h2{font-size:24px}
+  .panel-encabezado > div:first-child{width:100%}
+  .acciones-panel{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .acciones-panel .btn,.acciones-panel a,.acciones-panel button{justify-content:center;width:100%;min-height:44px;font-size:14px;padding:10px 8px}
+
+  /* ---------- Rejillas ---------- */
+  .grid-kpis{grid-template-columns:repeat(2,1fr);gap:10px}
+  .kpi{padding:14px 12px 12px}
+  .kpi-titulo{font-size:13px;max-width:none}
+  .kpi-icono{width:36px;height:36px}
+  .kpi-valor{font-size:30px}
+  .grid-medio{grid-template-columns:1fr;gap:14px}
+  .tarjeta{padding:14px}
+  .tarjeta-cabecera{margin-bottom:12px}
+
+  /* ---------- Tablas: desplazamiento horizontal ---------- */
+  .tarjeta table,.principal > table,.tabla-scroll table{display:block;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+  /* Tabla del Dashboard → tarjetas apiladas */
+  .tabla.tabla-cards{display:block;overflow:visible}
+  .tabla-cards thead{display:none}
+  .tabla-cards tbody{display:block}
+  .tabla-cards tr{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:12px 30px 12px 0;border-bottom:1px solid var(--borde);position:relative}
+  .tabla-cards tr:last-child{border-bottom:0}
+  .tabla-cards td{display:block;padding:0;border:0;font-size:13px}
+  .tabla-cards tr:hover td{background:none}
+  .tabla-cards td.td-puesto{flex:0 0 100%;font-size:15px}
+  .tabla-cards td.td-cliente{flex:0 0 100%;color:var(--texto-3);margin-top:-2px}
+  .tabla-cards td.td-cand::after{content:" candidatos";}
+  .tabla-cards td.td-cand{color:var(--texto-2);padding-right:6px;border-right:1px solid var(--borde);margin-right:2px}
+  .tabla-cards td.td-menu{position:absolute;right:0;top:14px;width:auto}
+  .tabla-cards td[colspan]{flex:0 0 100%;text-align:center}
+  .tabla-pie{flex-direction:column;gap:10px;align-items:flex-start}
+
+  /* ---------- Embudo / listas ---------- */
+  .embudo-cabecera-cols,.embudo-fila{grid-template-columns:1fr 64px 62px}
+  .embudo-barra{min-width:0;font-size:12.5px;padding:0 12px}
+  .lista-actividad li{gap:10px}
+
+  /* ---------- Formularios y ventanas ---------- */
+  input,select,textarea{font-size:16px !important}   /* evita el zoom automático en iOS */
+  .btn,button,.pag{min-height:40px}
+  .modal-fondo{padding:0;align-items:flex-end}
+  .modal-caja{width:100% !important;max-width:none !important;max-height:92vh;border-radius:18px 18px 0 0;overflow-y:auto}
+  [class*="modal"] form [class*="fila"],[class*="modal"] form [class*="grid"]{grid-template-columns:1fr !important}
+
+  /* ---------- Barra de navegación inferior ---------- */
+  .nav-inferior{
+    display:flex;position:fixed;left:0;right:0;bottom:0;z-index:50;
+    background:#fff;border-top:1px solid var(--borde);box-shadow:0 -4px 18px rgba(16,40,80,.08);
+    padding:6px 4px calc(6px + env(safe-area-inset-bottom));
+  }
+  .nav-inferior a,.nav-inferior button{
+    flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+    background:none;border:0;color:var(--texto-3);font-size:11.5px;font-weight:500;
+    padding:6px 2px;cursor:pointer;position:relative;font-family:inherit;min-height:0;
+  }
+  .nav-inferior svg{width:23px;height:23px}
+  .nav-inferior span{font-size:10.5px;letter-spacing:-.2px;white-space:nowrap}
+  .nav-inferior .activo{color:var(--azul);font-weight:700}
+  .nav-inferior .activo::after{content:"";position:absolute;bottom:-4px;left:22%;right:22%;height:3px;border-radius:3px;background:var(--azul)}
+  .nav-inferior .activo svg{fill:rgba(11,61,145,.12)}
+
+
+  /* ---------- Filtros en rejilla de 2 columnas ---------- */
+  .filtros-cand{display:grid !important;grid-template-columns:1fr 1fr;gap:10px;padding:12px !important;align-items:end}
+  .filtro-buscar{grid-column:1 / -1;min-width:0 !important}
+  .filtro-campo{min-width:0}
+  .filtro-campo select,.filtro-campo input[type="date"]{width:100%;min-width:0 !important}
+  .filtros-cand .btn-filtros,.filtros-cand > a,.filtros-cand > button{justify-content:center;width:100%}
+
+  /* ---------- Evitar que el contenido ensanche la página ---------- */
+  .principal,.principal > *,.tarjeta,.nodo,.nodo-head,.grupo,.persona{min-width:0;max-width:100%}
+  .principal [class*="grid"],.principal [class*="kpis"]{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .principal [class*="grid"] > *,.principal [class*="kpis"] > *{min-width:0}
+  .org-kpis{grid-template-columns:repeat(2,minmax(0,1fr)) !important}
+  .principal .grid-medio,.principal .kb-abajo,.principal .grid-2col,.principal .org-layout{grid-template-columns:minmax(0,1fr)}
+  .nodo-head{flex-wrap:wrap;gap:8px 10px;padding:13px 14px}
+  .persona .datos .nm,.persona .datos .cg{overflow-wrap:anywhere}
+  .mant-grid,.ficha-datos,.mf-fila,.ev-grid,.pr-grid,.cand-layout,.correo-grid{grid-template-columns:minmax(0,1fr) !important}
+  .tarjeta,.mant-h,.mant-desc{overflow-wrap:anywhere}
+  .menu-item{white-space:normal}
+  .nodo-tit{flex:1 1 150px}
+  .toast-caja{top:10px}
+}
+
+/* ---------- Teléfonos pequeños ---------- */
+@media (max-width:480px){
+  .panel-encabezado h2{font-size:22px}
+  .kpi-valor{font-size:28px}
+  .acciones-panel .btn{font-size:13.5px}
+}
+@media (max-width:360px){
+  .acciones-panel{grid-template-columns:1fr}
+  .grid-kpis{gap:8px}
+}
+

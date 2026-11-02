@@ -23,7 +23,7 @@ $estadosValidos = ['Programada','En Curso','Completada','Cancelada'];
 
 /* ---------------- KPIs ---------------- */
 $conteo = [];
-foreach ($pdo->query("SELECT en.estado, COUNT(*) c FROM entrevistas en INNER JOIN postulaciones et ON et.id = en.postulacion_id WHERE 1=1" . sqlAlcancePost('et.campana_id') . " GROUP BY en.estado") as $r) {
+foreach ($pdo->query("SELECT en.estado, COUNT(*) c FROM entrevistas en INNER JOIN postulaciones et ON et.id = en.postulacion_id WHERE 1=1" . sqlAlcanceEntrevista() . " GROUP BY en.estado") as $r) {
     $conteo[$r['estado']] = (int)$r['c'];
 }
 $gTotal = array_sum($conteo);
@@ -40,14 +40,14 @@ $kpis = [
 $sql = "SELECT en.id, en.tipo, en.fecha, en.hora, en.sala, en.estado, en.observaciones,
                en.entrevistador, en.rol_entrevistador, en.entrevistador_id,
                po.nombres, po.correo, po.telefono, po.dni,
-               c.puesto AS vacante, c.codigo AS req,
+               c.puesto AS vacante, c.codigo AS req, c.area_id AS area_campana,
                et.id AS postulacion_id, et.estado AS estado_postulacion,
                (SELECT e2.nombre FROM etapas e2 WHERE e2.id = et.etapa_id) AS etapa_candidato
           FROM entrevistas en
           INNER JOIN postulaciones et ON et.id = en.postulacion_id
           INNER JOIN postulantes   po ON po.id = et.postulante_id
           INNER JOIN campanas      c  ON c.id  = et.campana_id
-         WHERE 1=1" . sqlAlcancePost('et.campana_id');   // reclutador: solo entrevistas de su área
+         WHERE 1=1" . sqlAlcanceEntrevista();   // reclutador: entrevistas de su área + las que tiene asignadas
 $params = [];
 if ($fQ !== '') {
     $sql .= " AND (po.nombres LIKE :q1 OR po.dni LIKE :q2 OR po.correo LIKE :q3 OR c.puesto LIKE :q4 OR en.entrevistador LIKE :q5)";
@@ -86,7 +86,7 @@ $usuarios = $pdo->query(
 $entrevistadores = $pdo->query(
     "SELECT DISTINCT en.entrevistador_id, en.entrevistador, en.rol_entrevistador
        FROM entrevistas en INNER JOIN postulaciones et ON et.id = en.postulacion_id
-      WHERE en.entrevistador_id IS NOT NULL" . sqlAlcancePost('et.campana_id') . " ORDER BY en.entrevistador")->fetchAll();
+      WHERE en.entrevistador_id IS NOT NULL" . sqlAlcanceEntrevista() . " ORDER BY en.entrevistador")->fetchAll();
 
 $tiposEntrevista = ['Entrevista RH','Entrevista Técnica','Entrevista Cliente'];
 
@@ -250,6 +250,8 @@ require_once __DIR__ . '/includes/layout_top.php';
           <td><?= chipEstado($e['estado']) ?></td>
           <td>
             <div class="acciones">
+              <?php $puedeEditar = !alcanceEsReclutador() || (int)$e['area_campana'] === alcanceAreaId(); ?>
+              <?php if ($puedeEditar): ?>
               <button class="icobtn" aria-label="Reprogramar" title="Reprogramar / editar"
                 onclick='abrirEdicion(<?= json_encode([
                     'id' => (int)$e['id'],
@@ -265,6 +267,7 @@ require_once __DIR__ . '/includes/layout_top.php';
                 ], JSON_UNESCAPED_UNICODE) ?>)'>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               </button>
+              <?php endif; ?>
               <?php if ($e['estado'] !== 'Completada'): ?>
                 <form action="guardar_entrevista.php" method="POST" style="display:inline" onsubmit="return confirm('¿Marcar esta entrevista como completada?')">
                   <input type="hidden" name="id" value="<?= (int)$e['id'] ?>">
@@ -421,4 +424,5 @@ function cargarRol(){
 }
 </script>
 
+<script src="assets/js/filtros.js"></script>
 <?php require_once __DIR__ . '/includes/layout_bottom.php'; ?>

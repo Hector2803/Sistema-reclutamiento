@@ -17,7 +17,7 @@ $modClase = ['Presencial'=>'tag-pres','Híbrido'=>'tag-hib','Remoto'=>'tag-rem']
 
 <header class="nav">
   <div class="contenedor nav-in">
-    <a href="index.php" class="nav-logo"><img src="../assets/img/logo_a365.png" alt="A365"></a>
+    <a href="index.php" class="nav-logo"><img src="../assets/img/logo_a365_fiestas.png" alt="A365"></a>
     <nav class="nav-links">
       <a href="index.php">Bolsa de Trabajo</a>
       <a href="#">Quiénes somos</a>
@@ -135,7 +135,7 @@ $modClase = ['Presencial'=>'tag-pres','Híbrido'=>'tag-hib','Remoto'=>'tag-rem']
           <div class="pasos">
             <?php
             $pasos = [
-              ['Registro','Crea tu cuenta con correo y contraseña'],
+              ['Registro','Llena tus datos y recibe tu código por correo'],
               ['Datos y CV','Completa tu perfil y sube tu CV'],
               ['Test de evaluación','Responde el test de tu área'],
               ['Revisión','El reclutador evalúa tu postulación'],
@@ -157,7 +157,7 @@ $modClase = ['Presencial'=>'tag-pres','Híbrido'=>'tag-hib','Remoto'=>'tag-rem']
 <footer class="footer">
   <div class="contenedor footer-in">
     <div>
-      <img src="../assets/img/logo_a365.png" alt="A365" style="background:#fff;padding:8px 12px;border-radius:8px">
+      <img src="../assets/img/logo_a365_fiestas.png" alt="A365" style="background:#fff;padding:8px 12px;border-radius:8px">
       <p>A365 · Sistema de Reclutamiento. Talento que impulsa tu empresa.</p>
     </div>
     <div class="cols">

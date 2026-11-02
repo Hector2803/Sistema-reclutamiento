@@ -1,9 +1,12 @@
 <?php
-$tituloPagina = 'Requerimientos / Vacantes';
+$tituloPagina = 'Requerimientos';
 $activo = 'requerimientos';
 $estilosExtra = ['assets/css/candidatos.css', 'assets/css/requerimientos.css', 'assets/css/usuarios.css'];
 
 require_once __DIR__ . '/includes/guardia.php';
+
+/* El módulo de requerimientos lo gestionan solo Administrador y Supervisor; el Reclutador no lo ve. */
+if (!in_array(($_SESSION['usuario_rol'] ?? ''), ['Administrador','Supervisor'], true)) { header('Location: dashboard.php'); exit; }
 require_once __DIR__ . '/config/conexion.php';
 $pdo = obtenerConexion();
 
@@ -60,7 +63,7 @@ require_once __DIR__ . '/includes/layout_top.php';
 <!-- ===== Encabezado ===== -->
 <div class="panel-encabezado">
   <div>
-    <h2>Requerimientos / Vacantes</h2>
+    <h2>Requerimientos</h2>
     <p>Gestiona las posiciones solicitadas y publica vacantes para atraer talento.</p>
   </div>
   <div class="acciones-panel">
@@ -69,7 +72,7 @@ require_once __DIR__ . '/includes/layout_top.php';
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
       Ver portal público
     </button>
-    <button class="btn-linea">
+    <button class="btn-linea" type="button" id="btnExportReq" title="Descarga en CSV los requerimientos que se están mostrando">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       Exportar
     </button>
@@ -108,24 +111,24 @@ require_once __DIR__ . '/includes/layout_top.php';
 </div>
 
 <!-- ===== Filtros ===== -->
-<div class="filtros-cand">
+<div class="filtros-cand" data-filtra=".tabla-cargo" data-nombre="requerimiento">
   <div class="filtro-buscar">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
     <input type="text" placeholder="Buscar por cargo, área o código...">
   </div>
   <div class="filtro-campo"><label>Estado</label>
-    <select><option>Todos</option><option>Abierto</option><option>En Proceso</option><option>Cerrado</option></select></div>
+    <select data-campo="estado"><option value="">Todos</option><option>Abierto</option><option>En Proceso</option><option>Cerrado</option></select></div>
   <div class="filtro-campo"><label>Área</label>
-    <select><option>Todas</option><?php foreach($areas as $a): ?><option><?= htmlspecialchars($a['nombre']) ?></option><?php endforeach; ?></select></div>
+    <select data-campo="area"><option value="">Todas</option><?php foreach($areas as $a): ?><option><?= htmlspecialchars($a['nombre']) ?></option><?php endforeach; ?></select></div>
   <div class="filtro-campo"><label>Tipo</label>
-    <select><option>Todos</option><option>Nueva Posición</option><option>Reemplazo</option></select></div>
+    <select data-campo="tipo"><option value="">Todos</option><option>Nueva Posición</option><option>Reemplazo</option></select></div>
   <div class="filtro-campo"><label>Prioridad</label>
-    <select><option>Todas</option><option>Alta</option><option>Media</option><option>Baja</option></select></div>
-  <button class="btn-filtros">
+    <select data-campo="prio"><option value="">Todas</option><option>Alta</option><option>Media</option><option>Baja</option></select></div>
+  <button class="btn-filtros" type="button">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
     Filtros
   </button>
-  <button class="btn-limpiar">Limpiar</button>
+  <button class="btn-limpiar" type="button">Limpiar</button>
 </div>
 
 <!-- ===== Tabla ===== -->
@@ -145,7 +148,7 @@ require_once __DIR__ . '/includes/layout_top.php';
         </td></tr>
       <?php endif; ?>
       <?php foreach ($reqs as $r): ?>
-        <tr>
+        <tr data-fila data-estado="<?= htmlspecialchars($r['estado']) ?>" data-area="<?= htmlspecialchars($r['area']) ?>" data-tipo="<?= htmlspecialchars($r['tipo']) ?>" data-prio="<?= htmlspecialchars($r['prioridad']) ?>">
           <td class="col-check"><input type="checkbox"></td>
           <td class="codigo"><?= htmlspecialchars($r['codigo']) ?></td>
           <td class="cargo-cel">
@@ -497,4 +500,21 @@ function verReq(btn){
 }
 </script>
 
+<script src="assets/js/filtros.js"></script>
+<script>
+document.getElementById('btnExportReq').addEventListener('click', function () {
+  const filas = Array.from(document.querySelectorAll('.tabla-cargo tbody tr[data-fila]')).filter(r => !r.hidden);
+  if (!filas.length) { alert('No hay requerimientos para exportar con los filtros actuales.'); return; }
+  const esc = v => { v = String(v).replace(/\s+/g, ' ').trim(); if (/^[=+\-@]/.test(v) && isNaN(v)) v = "'" + v; return '"' + v.replace(/"/g, '""') + '"'; };
+  const out = [['Código','Cargo','Área','Tipo','Vacantes','Estado','Prioridad','Fecha solicitud'].map(esc).join(';')];
+  filas.forEach(function (r) {
+    const c = r.querySelectorAll('td');
+    out.push([c[1].textContent, r.querySelector('.cargo-cel .titulo').childNodes[0].textContent, c[3].textContent, c[4].textContent, c[5].textContent, c[6].textContent, c[7].textContent, c[8].textContent].map(esc).join(';'));
+  });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(["\ufeff" + out.join("\r\n")], { type: 'text/csv;charset=utf-8' }));
+  a.download = 'Requerimientos_' + new Date().toISOString().slice(0, 10) + '.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+});
+</script>
 <?php require_once __DIR__ . '/includes/layout_bottom.php'; ?>

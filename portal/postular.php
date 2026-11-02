@@ -6,7 +6,7 @@
    ============================================================ */
 require_once __DIR__ . '/datos_empleos.php';
 require_once __DIR__ . '/../includes/evaluar_cv.php';
-require_once __DIR__ . '/../includes/passwords.php';
+require_once __DIR__ . '/../includes/correo.php';
 require_once __DIR__ . '/../includes/flujo.php';
 
 $errores = [];
@@ -17,16 +17,12 @@ if (!$e) { header('Location: index.php'); exit; }
 /* ---------------- Registro ---------------- */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $correo    = trim($_POST['correo'] ?? '');
-    $clave     = (string)($_POST['clave'] ?? '');
-    $clave2    = (string)($_POST['clave2'] ?? '');
     $dni       = trim($_POST['dni'] ?? '');
     $nombres   = trim($_POST['nombres'] ?? '');
     $telefono  = trim($_POST['telefono'] ?? '');
     $distrito  = trim($_POST['distrito'] ?? '');
 
     if (!filter_var($correo, FILTER_VALIDATE_EMAIL)) $errores[] = 'Ingresa un correo electrónico válido.';
-    if (($errClave = validarClave($clave)) !== null)  $errores[] = $errClave;
-    if ($clave !== $clave2)                          $errores[] = 'Las contraseñas no coinciden.';
     if (!preg_match('/^[0-9]{8,15}$/', $dni))        $errores[] = 'El DNI debe tener solo números (8 a 15 dígitos).';
     if ($nombres === '')                             $errores[] = 'Ingresa tus nombres completos.';
 
@@ -60,14 +56,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if ($existe) {
                 $postulanteId = (int)$existe['id'];
-                $pdo->prepare("UPDATE postulantes SET nombres=:n, correo=:c, telefono=:t, distrito=:d, clave=:k WHERE id=:id")
+                $pdo->prepare("UPDATE postulantes SET nombres=:n, correo=:c, telefono=:t, distrito=:d WHERE id=:id")
                     ->execute([':n'=>$nombres, ':c'=>$correo, ':t'=>($telefono?:null), ':d'=>($distrito?:null),
-                               ':k'=>hashClave($clave), ':id'=>$postulanteId]);
+                               ':id'=>$postulanteId]);
             } else {
-                $pdo->prepare("INSERT INTO postulantes (dni, nombres, correo, telefono, distrito, clave)
-                               VALUES (:dni, :n, :c, :t, :d, :k)")
+                $pdo->prepare("INSERT INTO postulantes (dni, nombres, correo, telefono, distrito)
+                               VALUES (:dni, :n, :c, :t, :d)")
                     ->execute([':dni'=>$dni, ':n'=>$nombres, ':c'=>$correo, ':t'=>($telefono?:null),
-                               ':d'=>($distrito?:null), ':k'=>hashClave($clave)]);
+                               ':d'=>($distrito?:null)]);
                 $postulanteId = (int)$pdo->lastInsertId();
             }
 
@@ -129,7 +125,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                 }
 
-                header('Location: seguimiento.php?codigo=' . urlencode($codigo) . '&nuevo=1');
+                // Envía el código de seguimiento al correo personal del postulante (para que no lo pierda)
+                $enviado = 0;
+                try {
+                    $h = htmlspecialchars($nombres, ENT_QUOTES, 'UTF-8');
+                    $contenido = '<p style="font-size:15px;line-height:1.6;margin:0 0 12px">Hola <strong>' . $h . '</strong>,</p>'
+                        . '<p style="font-size:15px;line-height:1.6;margin:0 0 14px">Recibimos tu postulación a <strong>' . htmlspecialchars($e['titulo'] ?? '', ENT_QUOTES, 'UTF-8') . '</strong>. Este es tu código de seguimiento:</p>'
+                        . '<p style="text-align:center;margin:0 0 16px"><span style="display:inline-block;background:#eef3fc;border:1px solid #cfdcf3;border-radius:10px;padding:14px 26px;font-size:26px;font-weight:800;letter-spacing:2px;color:#0b2a63">' . htmlspecialchars($codigo) . '</span></p>'
+                        . '<p style="font-size:14px;line-height:1.6;margin:0 0 8px">Para ver el avance de tu proceso, entra a la Bolsa de Trabajo de A365, elige <strong>Consultar mi postulación</strong> e ingresa este código. También ahí rendirás tu evaluación (test).</p>';
+                    $html = correoPlantilla('Tu código|de seguimiento', $contenido, 'Guarda este correo: lo necesitarás para consultar tu postulación. No compartas tu código con otras personas.');
+                    $txt  = "Hola $nombres,\n\nRecibimos tu postulación. Tu código de seguimiento es: $codigo\n\nIngresa a la Bolsa de Trabajo de A365, elige «Consultar mi postulación» e ingresa el código. Guarda este correo.\n";
+                    [$enviado] = correoEnviar($pdo, $correo, 'A365 · Tu código de seguimiento ' . $codigo, $html . '<!--TXT' . $txt . 'TXT-->');
+                } catch (Throwable $ex) { $enviado = 0; }
+
+                header('Location: seguimiento.php?codigo=' . urlencode($codigo) . '&nuevo=1&correo=' . ($enviado ? 1 : 0));
                 exit;
             }
         } catch (PDOException $ex) {
@@ -150,7 +159,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <header class="nav">
   <div class="contenedor nav-in">
-    <a href="index.php" class="nav-logo"><img src="../assets/img/logo_a365.png" alt="A365"></a>
+    <a href="index.php" class="nav-logo"><img src="../assets/img/logo_a365_fiestas.png" alt="A365"></a>
     <nav class="nav-links">
       <a href="index.php">Bolsa de Trabajo</a>
       <a href="#">Quiénes somos</a>
@@ -168,7 +177,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div class="auth-wrap">
       <div class="auth-card">
-        <div class="lg"><img src="../assets/img/logo_a365.png" alt="A365"></div>
+        <div class="lg"><img src="../assets/img/logo_a365_fiestas.png" alt="A365"></div>
         <h1>Postula a <?= htmlspecialchars($e['titulo']) ?></h1>
         <p class="sub">Completa tus datos. Al finalizar recibirás tu <strong>código de seguimiento</strong>.</p>
 
@@ -202,18 +211,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <label for="distrito">Distrito / ciudad</label>
             <input type="text" id="distrito" name="distrito" maxlength="80" value="<?= htmlspecialchars($_POST['distrito'] ?? '') ?>" placeholder="Ej. Magdalena">
           </div>
-          <div class="campo-a">
-            <label for="clave">Crea una contraseña *</label>
-            <input type="password" id="clave" name="clave" required minlength="6"
-                   pattern="(?=.*[A-Za-z])(?=.*[0-9]).{6,}"
-                   title="Mínimo 6 caracteres, con al menos una letra y un número"
-                   placeholder="Mínimo 6 caracteres, con letra y número">
-            <div class="ayuda">Mínimo 6 caracteres, con al menos una letra y un número.</div>
-            <div class="ayuda">La usarás para consultar tu postulación.</div>
-          </div>
-          <div class="campo-a">
-            <label for="clave2">Repite la contraseña *</label>
-            <input type="password" id="clave2" name="clave2" required minlength="6" placeholder="Repite tu contraseña">
+          <div class="aviso-campo">
+            Al enviar tu postulación te mostraremos tu <strong>código de seguimiento</strong> y lo enviaremos también a tu correo personal, para que no lo pierdas.
           </div>
           <div class="campo-a">
             <label for="cv">Currículum (PDF, DOC o DOCX · máx. 5 MB)</label>

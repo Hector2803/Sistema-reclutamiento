@@ -10,6 +10,7 @@
    ============================================================ */
 function migrarFlujoSiHaceFalta(): void
 {
+    if (defined('MIGRAR_FLUJO_AUTO') && !MIGRAR_FLUJO_AUTO) return;   // desactivar: define('MIGRAR_FLUJO_AUTO', false) en config/sistema.php
     static $hecho = false;
     if ($hecho) return;
     $hecho = true;
@@ -23,6 +24,12 @@ function migrarFlujoSiHaceFalta(): void
         $nuevas = (int)$pdo->query("SELECT COUNT(*) FROM etapas WHERE nombre IN ('Postulación','Evaluación (test)','Validación (datos, CV y documentos)','Entrevista presencial','Capacitaciones','Proceso finalizado')")->fetchColumn();
         $viejas = (int)$pdo->query("SELECT COUNT(*) FROM etapas WHERE nombre LIKE 'Validaci%' AND nombre <> 'Validación (datos, CV y documentos)' OR nombre LIKE 'Contacto%' OR nombre LIKE 'Entrevista /%' OR nombre LIKE 'Acepta%' OR nombre LIKE 'Antecedentes%' OR nombre = 'Ingresa'")->fetchColumn();
         if ($tabla && $col && $total === 6 && $nuevas === 6 && $viejas === 0) return;
+
+        // Protección: no reintentar en cada petición (si la migración falla, se espera 10 minutos)
+        $dirLock = is_dir(__DIR__ . '/../backups') && is_writable(__DIR__ . '/../backups') ? __DIR__ . '/../backups' : sys_get_temp_dir();
+        $lock = $dirLock . '/.migracion_flujo_intento';
+        if (is_file($lock) && (time() - (int)@filemtime($lock)) < 600) return;
+        @touch($lock);
 
         $archivo = __DIR__ . '/../sql/flujo_proceso.sql';
         if (!is_file($archivo)) return;

@@ -8,17 +8,45 @@ require_once __DIR__ . '/config/conexion.php';
 require_once __DIR__ . '/includes/alcance.php';
 $pdo = obtenerConexion();
 
+/* ===== Filtro por fecha (desde / hasta, formato AAAA-MM-DD) =====
+   Sin parámetros = todo el historial. Se valida en el servidor. */
+function fechaValida($v): ?string {
+    if (!is_string($v) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $v)) return null;
+    $d = DateTime::createFromFormat('Y-m-d', $v);
+    return ($d && $d->format('Y-m-d') === $v) ? $v : null;
+}
+$desde = fechaValida($_GET['desde'] ?? '');
+$hasta = fechaValida($_GET['hasta'] ?? '');
+$errorFecha = '';
+if ($desde && $hasta && $desde > $hasta) { [$desde,$hasta] = [$hasta,$desde]; }
+if (($_GET['desde'] ?? '') !== '' && !$desde) $errorFecha = 'La fecha "desde" no es válida; se ignoró.';
+if (($_GET['hasta'] ?? '') !== '' && !$hasta) $errorFecha = 'La fecha "hasta" no es válida; se ignoró.';
+$hayFiltro = ($desde || $hasta);
+function sqlRango(PDO $pdo, string $col, ?string $d, ?string $h): string {
+    $r = '';
+    if ($d) $r .= " AND DATE($col) >= " . $pdo->quote($d);
+    if ($h) $r .= " AND DATE($col) <= " . $pdo->quote($h);
+    return $r;
+}
+$fC = sqlRango($pdo, 'creado_en', $desde, $hasta);          // requerimientos: fecha de creación
+$fP = sqlRango($pdo, 'fecha_postulacion', $desde, $hasta);  // candidatos: fecha de postulación
+$fPp = str_replace('fecha_postulacion','p.fecha_postulacion',$fP);
+$etiquetaRango = $hayFiltro
+    ? (($desde ? date('d/m/Y', strtotime($desde)) : 'Inicio') . ' - ' . ($hasta ? date('d/m/Y', strtotime($hasta)) : 'Hoy'))
+    : 'Todo el historial';
+
 /* ===== Datos base ===== */
-$totalReq   = (int)$pdo->query("SELECT COUNT(*) c FROM campanas WHERE 1=1" . sqlAlcanceCampana('area_id'))->fetch()['c'];
-$totalPost  = (int)$pdo->query("SELECT COUNT(*) c FROM postulaciones WHERE 1=1" . sqlAlcancePost('campana_id'))->fetch()['c'];
-$selec      = (int)$pdo->query("SELECT COUNT(*) c FROM postulaciones WHERE estado='Seleccionado'" . sqlAlcancePost('campana_id'))->fetch()['c'];
-$descart    = (int)$pdo->query("SELECT COUNT(*) c FROM postulaciones WHERE estado='Descartado'" . sqlAlcancePost('campana_id'))->fetch()['c'];
-$enproc     = (int)$pdo->query("SELECT COUNT(*) c FROM postulaciones WHERE estado='En Proceso'" . sqlAlcancePost('campana_id'))->fetch()['c'];
+$totalReq   = (int)$pdo->query("SELECT COUNT(*) c FROM campanas WHERE 1=1" . sqlAlcanceCampana('area_id') . $fC)->fetch()['c'];
+$totalPost  = (int)$pdo->query("SELECT COUNT(*) c FROM postulaciones WHERE 1=1" . sqlAlcancePost('campana_id') . $fP)->fetch()['c'];
+$selec      = (int)$pdo->query("SELECT COUNT(*) c FROM postulaciones WHERE estado='Seleccionado'" . sqlAlcancePost('campana_id') . $fP)->fetch()['c'];
+$descart    = (int)$pdo->query("SELECT COUNT(*) c FROM postulaciones WHERE estado='Descartado'" . sqlAlcancePost('campana_id') . $fP)->fetch()['c'];
+$enproc     = (int)$pdo->query("SELECT COUNT(*) c FROM postulaciones WHERE estado='En Proceso'" . sqlAlcancePost('campana_id') . $fP)->fetch()['c'];
 $tasaSel    = $totalPost ? round($selec*100/$totalPost,1) : 0;
 $tasaDesc   = $totalPost ? round($descart*100/$totalPost,1) : 0;
 $candXReq   = $totalReq ? round($totalPost/$totalReq,2) : 0;
 
 /* ===== KPIs ===== */
+$verReq = !alcanceEsReclutador();   // el Reclutador no ve requerimientos
 $kpis = [
     ['ic'=>'azul',  'titulo'=>'Requerimientos', 'num'=>(string)$totalReq,  'delta'=>''],
     ['ic'=>'verde', 'titulo'=>'Candidatos',     'num'=>(string)$totalPost, 'delta'=>''],
@@ -26,12 +54,13 @@ $kpis = [
     ['ic'=>'morado','titulo'=>'Seleccionados',  'num'=>(string)$selec,     'delta'=>''],
     ['ic'=>'ambar', 'titulo'=>'Tasa de Selección','num'=>$tasaSel.'%',     'delta'=>''],
 ];
+if (!$verReq) array_shift($kpis);
 
 /* ===== Requerimientos por Estado (donut) ===== */
 $reqEstado = [];
 $colEst = ['Abierto'=>'#2f6fed','En Proceso'=>'#f5a623','Cerrado'=>'#22a06b'];
 foreach (['Abierto','En Proceso','Cerrado'] as $es) {
-    $n = (int)$pdo->query("SELECT COUNT(*) c FROM campanas WHERE estado=".$pdo->quote($es) . sqlAlcanceCampana('area_id'))->fetch()['c'];
+    $n = (int)$pdo->query("SELECT COUNT(*) c FROM campanas WHERE estado=".$pdo->quote($es) . sqlAlcanceCampana('area_id') . $fC)->fetch()['c'];
     $pct = $totalReq ? round($n*100/$totalReq,1) : 0;
     if ($n>0) $reqEstado[] = [$es,$n,$pct,$colEst[$es]];
 }
@@ -54,7 +83,7 @@ $base = 0;
 foreach ($etapasOrd as $i=>$e) {
     $n = (int)$pdo->query(
         "SELECT COUNT(DISTINCT h.postulacion_id) c FROM historial_etapas h INNER JOIN postulaciones p ON p.id=h.postulacion_id
-          WHERE h.etapa_destino=".(int)$e['id'] . sqlAlcancePost('p.campana_id'))->fetch()['c'];
+          WHERE h.etapa_destino=".(int)$e['id'] . sqlAlcancePost('p.campana_id') . $fPp)->fetch()['c'];
     if ($i===0) $base = $n;
     $pct = $base ? round($n*100/$base,1) : 0;
     $w   = max(30, (int)round($pct));
@@ -66,7 +95,7 @@ $motivosDesc = $pdo->query(
     "SELECT m.descripcion, COUNT(*) c
      FROM historial_etapas h INNER JOIN motivos_descarte m ON m.id=h.motivo_id
      INNER JOIN postulaciones p ON p.id=h.postulacion_id
-     WHERE 1=1" . sqlAlcancePost('p.campana_id') . "
+     WHERE 1=1" . sqlAlcancePost('p.campana_id') . $fPp . "
      GROUP BY m.id ORDER BY c DESC LIMIT 6")->fetchAll();
 $totalDesc = array_sum(array_map(fn($x)=>(int)$x['c'], $motivosDesc));
 $fuentes = [];
@@ -76,27 +105,89 @@ foreach ($motivosDesc as $md) {
 }
 
 /* Inasistencias a capacitaciones (causa de descarte en la etapa 5) */
-$inasist = (int)$pdo->query("SELECT COUNT(*) FROM capacitaciones k INNER JOIN postulaciones p ON p.id=k.postulacion_id WHERE k.asistencia='No asistió'" . sqlAlcancePost('p.campana_id'))->fetchColumn();
+$inasist = (int)$pdo->query("SELECT COUNT(*) FROM capacitaciones k INNER JOIN postulaciones p ON p.id=k.postulacion_id WHERE k.asistencia='No asistió'" . sqlAlcancePost('p.campana_id') . $fPp)->fetchColumn();
 
 /* ===== Resumen general ===== */
 $resumen = [
-    ['users','Candidatos por requerimiento', (string)$candXReq],
     ['check','Tasa de selección',            $tasaSel.'%'],
     ['reloj','Tasa de descarte',             $tasaDesc.'%'],
     ['users','Total descartados',            (string)$descart],
     ['reloj','Inasistencias a capacitaciones', (string)$inasist],
 ];
+if ($verReq) array_unshift($resumen, ['users','Candidatos por requerimiento', (string)$candXReq]);
 
-/* ===== Evolución: candidatos registrados por día (últimos 8 días) ===== */
+/* ===== Evolución: candidatos registrados ===== */
 $dias = [];
-for ($i=7;$i>=0;$i--) $dias[date('Y-m-d', strtotime("-$i day"))] = 0;
+$agrupaMes = false;
+if ($hayFiltro) {
+    $ini = new DateTime($desde ?: date('Y-m-d', strtotime('-7 day')));
+    $fin = new DateTime($hasta ?: date('Y-m-d'));
+    if (!$desde) { $ini = (clone $fin)->modify('-7 day'); }
+    $nDias = (int)$ini->diff($fin)->days + 1;
+    if ($nDias > 31) {
+        $agrupaMes = true;
+        $c = new DateTime($ini->format('Y-m-01'));
+        $tope = new DateTime($fin->format('Y-m-01'));
+        while ($c <= $tope && count($dias) < 36) { $dias[$c->format('Y-m')] = 0; $c->modify('+1 month'); }
+    } else {
+        for ($c = clone $ini; $c <= $fin; $c->modify('+1 day')) $dias[$c->format('Y-m-d')] = 0;
+    }
+    $lim = ($desde ? " AND DATE(fecha_postulacion) >= ".$pdo->quote($ini->format('Y-m-d')) : '') . $fP;
+    if (!$desde) $lim = " AND DATE(fecha_postulacion) >= ".$pdo->quote($ini->format('Y-m-d')) . sqlRango($pdo,'fecha_postulacion',null,$hasta);
+} else {
+    for ($i=7;$i>=0;$i--) $dias[date('Y-m-d', strtotime("-$i day"))] = 0;
+    $lim = " AND fecha_postulacion >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)";
+}
+$fmt = $agrupaMes ? "DATE_FORMAT(fecha_postulacion,'%Y-%m')" : "DATE(fecha_postulacion)";
 $reg = $pdo->query(
-    "SELECT DATE(fecha_postulacion) d, COUNT(*) c FROM postulaciones
-     WHERE fecha_postulacion >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)" . sqlAlcancePost('campana_id') . "
-     GROUP BY DATE(fecha_postulacion)")->fetchAll();
+    "SELECT $fmt d, COUNT(*) c FROM postulaciones
+     WHERE 1=1" . $lim . sqlAlcancePost('campana_id') . "
+     GROUP BY d")->fetchAll();
 foreach ($reg as $r) { if (isset($dias[$r['d']])) $dias[$r['d']] = (int)$r['c']; }
 $series = [ ['Candidatos registrados', '#2f6fed', array_values($dias)] ];
-$ejeX = array_map(fn($d)=>date('d/m', strtotime($d)), array_keys($dias));
+$ejeX = array_map(fn($d)=> $agrupaMes ? date('m/Y', strtotime($d.'-01')) : date('d/m', strtotime($d)), array_keys($dias));
+$tituloEvol = $agrupaMes ? 'Mensual' : 'Diario';
+
+/* ===== Exportar reporte (CSV compatible con Excel) ===== */
+if (($_GET['exportar'] ?? '') === 'csv') {
+    $nombreArch = 'Reporte_SSR_A365_' . date('Ymd_His') . '.csv';
+    header('Content-Type: text/csv; charset=UTF-8');
+    header('Content-Disposition: attachment; filename="' . $nombreArch . '"');
+    header('Cache-Control: no-store');
+    $o = fopen('php://output', 'w');
+    fwrite($o, "\xEF\xBB\xBF");
+    $f = function(array $fila) use ($o) {
+        $fila = array_map(function($v){
+            $v = (string)$v;
+            if ($v !== '' && strpos('=+-@', $v[0]) !== false && !is_numeric($v)) $v = "'" . $v; // evita inyección de fórmulas
+            return $v;
+        }, $fila);
+        fputcsv($o, $fila, ';', '"', '\\');
+    };
+    $f(['SSR A365 - Reporte de reclutamiento']);
+    $f(['Periodo', $etiquetaRango]);
+    $f(['Generado', date('d/m/Y H:i')]);
+    $f(['Generado por', $_SESSION['usuario_nombre'] ?? '']);
+    $f(['Alcance', alcanceEsReclutador() ? 'Solo mi área' : 'Todas las áreas']);
+    $f([]); $f(['INDICADORES']); $f(['Indicador','Valor']);
+    foreach ($kpis as $k) $f([$k['titulo'], $k['num']]);
+    if ($verReq) {
+        $f([]); $f(['REQUERIMIENTOS POR ESTADO']); $f(['Estado','Cantidad','Porcentaje']);
+        foreach ($reqEstado as $d) if ($d[0] !== 'Sin datos') $f([$d[0], $d[1], $d[2].'%']);
+    }
+    $f([]); $f(['CANDIDATOS POR ETAPA (llegaron a la etapa)']); $f(['Etapa','Candidatos','Porcentaje']);
+    foreach ($funnel as $d) $f([$d[0], $d[1], $d[2].'%']);
+    $f([]); $f(['CANDIDATOS POR ESTADO']); $f(['Estado','Cantidad','Porcentaje']);
+    foreach ($candEstado as $d) if ($d[0] !== 'Sin datos') $f([$d[0], $d[1], $d[2].'%']);
+    $f([]); $f(['MOTIVOS DE DESCARTE']); $f(['Motivo','Cantidad','Porcentaje']);
+    foreach ($motivosDesc as $m) $f([$m['descripcion'], $m['c'], ($totalDesc ? round($m['c']*100/$totalDesc) : 0).'%']);
+    $f([]); $f(['EVOLUCION DE ACTIVIDAD (' . $tituloEvol . ')']); $f(['Periodo','Candidatos registrados']);
+    foreach (array_values($ejeX) as $i => $lab) $f([$lab, $series[0][2][$i]]);
+    $f([]); $f(['RESUMEN GENERAL']); $f(['Concepto','Valor']);
+    foreach ($resumen as $r) $f([$r[1], $r[2]]);
+    fclose($o);
+    exit;
+}
 
 /* ---------- Helpers de gráficas ---------- */
 function donutSVG(array $datos): string {
@@ -146,20 +237,30 @@ require_once __DIR__ . '/includes/layout_top.php';
     <p>Analiza y visualiza el rendimiento de tus procesos de reclutamiento.</p>
   </div>
   <div class="acciones-panel">
-    <div class="rango-fecha">
+    <form method="get" class="rango-fecha rango-form" id="formRango">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-      01/05/2024 - 31/05/2024
-      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-    </div>
-    <button class="btn btn-azul">
+      <input type="date" name="desde" id="fDesde" value="<?= htmlspecialchars($desde ?? '') ?>" max="<?= date('Y-m-d') ?>" aria-label="Desde">
+      <span class="sep">-</span>
+      <input type="date" name="hasta" id="fHasta" value="<?= htmlspecialchars($hasta ?? '') ?>" max="<?= date('Y-m-d') ?>" aria-label="Hasta">
+      <button type="submit" class="rf-btn">Aplicar</button>
+      <?php if ($hayFiltro): ?><a href="reportes.php" class="rf-lim" title="Quitar filtro">Limpiar</a><?php endif; ?>
+    </form>
+    <a class="btn btn-azul" id="btnExportar" href="reportes.php?<?= htmlspecialchars(http_build_query(array_filter(['desde'=>$desde,'hasta'=>$hasta]) + ['exportar'=>'csv'])) ?>">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       Exportar Reporte
-    </button>
+    </a>
   </div>
 </div>
+<p class="rango-info">Periodo: <strong><?= htmlspecialchars($etiquetaRango) ?></strong><?= $errorFecha ? ' · <span style="color:#e30613">'.htmlspecialchars($errorFecha).'</span>' : '' ?>
+  <span class="rapidos">
+    <a href="?desde=<?= date('Y-m-01') ?>&hasta=<?= date('Y-m-d') ?>">Este mes</a>
+    <a href="?desde=<?= date('Y-m-d', strtotime('-29 day')) ?>&hasta=<?= date('Y-m-d') ?>">Últimos 30 días</a>
+    <a href="?desde=<?= date('Y-01-01') ?>&hasta=<?= date('Y-m-d') ?>">Este año</a>
+    <a href="reportes.php">Todo</a>
+  </span></p>
 
 <!-- ===== KPIs ===== -->
-<div class="rep-kpis">
+<div class="rep-kpis"<?= $verReq ? '' : ' style="grid-template-columns:repeat(4,1fr)"' ?>>
   <?php foreach ($kpis as $k): ?>
     <div class="rep-kpi">
       <div class="cab">
@@ -179,8 +280,9 @@ require_once __DIR__ . '/includes/layout_top.php';
 </div>
 
 <!-- ===== Fila 1: donut / embudo / donut ===== -->
-<div class="rep-fila3">
+<div class="rep-fila3"<?= $verReq ? '' : ' style="grid-template-columns:1fr 1fr"' ?>>
 
+  <?php if ($verReq): ?>
   <section class="tarjeta">
     <h3 style="margin-bottom:16px">Requerimientos por Estado</h3>
     <div class="donut-wrap">
@@ -195,6 +297,8 @@ require_once __DIR__ . '/includes/layout_top.php';
       </div>
     </div>
   </section>
+
+  <?php endif; ?>
 
   <section class="tarjeta">
     <h3 style="margin-bottom:16px">Candidatos por Etapa</h3>
@@ -247,7 +351,7 @@ require_once __DIR__ . '/includes/layout_top.php';
   <section class="tarjeta">
     <div class="linea-cab" style="justify-content:space-between">
       <h3>Evolución de Actividad</h3>
-      <div class="filtro-fecha" style="padding:6px 10px">Diario
+      <div class="filtro-fecha" style="padding:6px 10px"><?= $tituloEvol ?>
         <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
       </div>
     </div>

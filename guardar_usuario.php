@@ -140,7 +140,7 @@ try {
         responder(false, 'El correo real no es válido.');
     }
 
-    // CP-08: mínimo 6 caracteres, con letra y número (si se envía contraseña)
+    // CP-08: mínimo 10 caracteres, mayúscula, minúscula, número y especial (si se envía contraseña)
     if ($clave !== '' && ($errClave = validarClave($clave)) !== null) {
         responder(false, $errClave);
     }

@@ -8,7 +8,7 @@ require_once __DIR__ . '/config/conexion.php';
 require_once __DIR__ . '/config/sistema.php';
 
 if (($_SESSION['usuario_rol'] ?? '') !== 'Administrador') { header('Location: dashboard.php'); exit; }
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') { header('Location: mantenimiento.php'); exit; }
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') { header('Location: backup.php'); exit; }
 
 $fecha  = date('Y-m-d_His');
 $archivo = 'backup_' . DB_NOMBRE . '_' . $fecha . '.sql';
@@ -26,7 +26,7 @@ $salida = []; $ret = 0;
 
 if ($ret !== 0 || !file_exists($ruta) || filesize($ruta) === 0) {
     $_SESSION['flash_error'] = 'No se pudo generar el respaldo. Verifica la ruta de MySQL en config/sistema.php.';
-    header('Location: mantenimiento.php'); exit;
+    header('Location: backup.php'); exit;
 }
 
 // Registrar en el historial

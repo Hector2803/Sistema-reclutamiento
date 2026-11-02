@@ -84,7 +84,7 @@ if ($codigo !== '') {
 
 <header class="nav">
   <div class="contenedor nav-in">
-    <a href="index.php" class="nav-logo"><img src="../assets/img/logo_a365.png" alt="A365"></a>
+    <a href="index.php" class="nav-logo"><img src="../assets/img/logo_a365_fiestas.png" alt="A365"></a>
     <nav class="nav-links">
       <a href="index.php">Bolsa de Trabajo</a>
       <a href="#">Quiénes somos</a>
@@ -108,7 +108,7 @@ if ($codigo !== '') {
         <?php if ($nuevo && $post): ?>
           <div class="aviso-portal">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-            <span>Postulación registrada. Tu código de seguimiento es <strong><?= htmlspecialchars($codigo) ?></strong>. Guárdalo para consultar tu avance.</span>
+            <span>Postulación registrada. Tu código de seguimiento es <strong><?= htmlspecialchars($codigo) ?></strong>. <?= (($_GET['correo'] ?? '') === '1') ? 'Te lo enviamos también a tu correo personal para que no lo pierdas.' : 'Guárdalo para consultar tu avance (no pudimos enviarlo a tu correo; anótalo o toma una captura).' ?></span>
           </div>
         <?php endif; ?>
 

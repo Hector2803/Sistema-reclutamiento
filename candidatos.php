@@ -544,4 +544,5 @@ function alternarMotivo(){
 if (new URLSearchParams(location.search).get('nuevo') === '1') { document.getElementById('modalPostulante').classList.add('abierto'); }
 </script>
 
+<script src="assets/js/filtros.js"></script>
 <?php require_once __DIR__ . '/includes/layout_bottom.php'; ?>

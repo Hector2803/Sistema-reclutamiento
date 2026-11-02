@@ -94,7 +94,7 @@ candidatos (RF-03 registro, RF-04 etapa, RF-07 búsqueda/filtros).
 ACTUALIZACIÓN: Módulos Requerimientos/Vacantes y Entrevistas
 ------------------------------------------------------------
 Nuevos:
-  requerimientos.php          -> Requerimientos / Vacantes
+  requerimientos.php          -> Requerimientos
   assets/css/requerimientos.css
   entrevistas.php             -> Entrevistas
   assets/css/entrevistas.css
@@ -624,3 +624,93 @@ CAMBIOS RECIENTES (versión 1.0.x)
    - Se valida también en el servidor: mover etapa, registrar candidato,
      programar/editar/cambiar estado de entrevistas y consultar resultados.
    - Código común: includes/alcance.php.
+
+DISEÑO ADAPTABLE (MÓVIL)
+- assets/css/responsive.css (panel) y portal/assets/portal.css (portal público).
+- En pantallas de hasta 900 px: menú lateral como cajón (botón ☰ o «Más»), barra de navegación
+  inferior (Dashboard, Vacantes, Candidatos, Entrevistas, Más), indicadores en 2 columnas,
+  filtros en rejilla, tablas con desplazamiento horizontal y vacantes del Dashboard como tarjetas.
+
+CORREOS DE CREDENCIALES (botón "Ir al sistema")
+- El botón solo se incluye con HTTPS y dominio propio (Gmail bloquea enlaces a dominios gratuitos como
+  unaux.com y Chrome los marca como "Sitio peligroso"). En ese caso el correo sale sin botón.
+- Cuando el sistema tenga dominio propio con HTTPS, en config/sistema.php:
+    define('CORREO_URL_LOGIN', 'https://su-dominio/login.php');
+    define('CORREO_INCLUIR_ENLACE', true);
+
+SI GMAIL BLOQUEA LOS CORREOS ("mensaje sospechoso")
+1) Enviar primero el "correo de prueba" (Administración → Correo). Si llega, el problema es el contenido/enlace.
+2) En config/sistema.php se puede usar un correo más simple, hecho de texto (sin tiras de imagen):
+    define('CORREO_DISENO', 'texto');
+3) No definir CORREO_INCLUIR_ENLACE como true mientras el sistema esté en un dominio gratuito.
+
+============================================================
+REPORTES: FILTRO POR FECHA Y EXPORTACION
+============================================================
+- Reportes > selector "desde / hasta" + boton Aplicar (atajos: Este mes, Ultimos 30 dias, Este ano, Todo).
+  El filtro se aplica a TODOS los indicadores y graficas (requerimientos por fecha de creacion;
+  candidatos, etapas, descartes e inasistencias por fecha de postulacion). Sin filtro = todo el historial.
+  Las fechas se validan en el servidor; si desde > hasta se invierten solas.
+- "Exportar Reporte" descarga un CSV (UTF-8, separador ;, abre directo en Excel) con el MISMO periodo
+  y alcance (el Reclutador solo exporta su area). No requiere cambios en la base de datos.
+
+============================================================
+CAMPANITA DE NOTIFICACIONES
+============================================================
+- La campanita de la barra superior muestra las notificaciones reales (ultimos 14 dias): candidatos nuevos,
+  avances de etapa, seleccionados, descartes, entrevistas de hoy/manana y requerimientos nuevos.
+- El Reclutador solo ve las de su area. El contador se actualiza cada minuto.
+- "Marcar todas como leidas" es por usuario. Usa la tabla notificaciones_vistas, que se crea sola
+  la primera vez (no hay que importar nada).
+
+============================================================
+ADMINISTRACION: NUEVA PESTANA "BACKUP"
+============================================================
+- Administracion > Backup: copia de seguridad (generar y descargar), restauracion de la BD (.sql) y sus
+  historiales (busqueda, filtro, paginacion de 5 en 5 y menu de acciones: descargar respaldo / ver detalle).
+- Administracion > Mantenimiento ahora muestra solo "Version del sistema" (aplicar actualizacion e historial
+  de versiones, con estado, notas y descarga del paquete).
+- Archivos nuevos: backup.php, descargar_backup.php, assets/css/admin_panel.css, assets/js/historial.js.
+  Las descargas solo entregan archivos registrados en el historial y solo al Administrador.
+
+============================================================
+ROL RECLUTADOR Y REQUERIMIENTOS
+============================================================
+- El Reclutador ya no ve el modulo Requerimientos: no aparece en el menu ni en la barra inferior, la URL
+  lo redirige al Dashboard, y se ocultan "Nuevo Requerimiento", "Vacantes Recientes" y "Vacantes Activas"
+  (Dashboard), "Requerimientos" y "Requerimientos por Estado" (Reportes, tambien en el CSV) y los avisos
+  de requerimientos nuevos (campanita). Solo Administrador y Supervisor ven y crean/editan requerimientos.
+
+============================================================
+ENTREVISTADOR ASIGNADO Y FILTROS
+============================================================
+- Un usuario (p. ej. Alexander) ahora ve en "Entrevistas" las entrevistas de su area Y las que le asignaron
+  como entrevistador, aunque el candidato sea de otra area. Puede marcarlas Completada/Cancelada. La campanita
+  le avisa "Entrevista asignada a ti" y "Entrevista hoy/manana". Otros reclutadores no ven entrevistas ajenas.
+- Filtros: Entrevistas y Candidatos se aplican solos (al cambiar un filtro o dejar de escribir);
+  Requerimientos y Usuarios filtran en vivo (busqueda, estado, area, tipo, prioridad, rol) y "Limpiar" funciona.
+- Requerimientos > Exportar descarga un CSV con lo que se esta mostrando.
+- Dashboard: el pie de "Vacantes Recientes" muestra el total real.
+
+============================================================
+CAMBIO DE AREA/ROL CON LA SESION ABIERTA
+============================================================
+- Causa: el area y el rol del usuario se guardaban al ingresar. Si el administrador asignaba o cambiaba el
+  area de un Reclutador (p. ej. Alexander -> Atencion al Cliente) cuando este ya tenia la sesion abierta,
+  seguia viendo "sin area" (0 candidatos). Ahora el perfil se lee de la base de datos en cada pagina:
+  el cambio rige de inmediato, y un usuario desactivado es sacado del sistema.
+
+============================================================
+POSTULACION SIN CONTRASENA (CODIGO POR CORREO)
+============================================================
+- El formulario publico ya no pide contrasena: el seguimiento se hace solo con el codigo (A365-XXXXX).
+- Al postular, el codigo se muestra en pantalla y se ENVIA al correo personal del postulante
+  (requiere el SMTP de Administracion > Correo; si no esta configurado o falla, la pantalla avisa para que
+  el postulante anote su codigo). Los postulantes nuevos se guardan sin clave (columna clave en NULL).
+
+============================================================
+MONITOREO CON UPTIMEROBOT
+============================================================
+- Se agrego salud.php (publico, sin datos): responde 200 "A365_OK" si PHP y la base de datos funcionan, o 503
+  "A365_ERROR" si la base falla. En UptimeRobot: New monitor > HTTP(s) / Keyword, URL .../salud.php,
+  palabra clave A365_OK, intervalo 5 min, y agregar un contacto de alerta (correo).

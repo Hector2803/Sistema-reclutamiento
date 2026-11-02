@@ -46,7 +46,33 @@ $bitacora = $pdo->query(
 )->fetchAll();
 $bitOk   = 0;
 $bitFail = 0;
-foreach ($bitacora as $b) { if ((int)$b['exito'] === 1) $bitOk++; else $bitFail++; }
+$bitEv   = 0;   // bloqueos y desbloqueos
+foreach ($bitacora as $b) {
+    $e = (int)$b['exito'];
+    if ($e === 1) $bitOk++;
+    elseif ($e === 2) $bitEv++;
+    else $bitFail++;   // 0 = fallo, 3 = fallo ya liberado por el administrador
+}
+
+/* ---- Usuarios bloqueados por 3 intentos fallidos (ventana de 15 min) ---- */
+$bloqueados = [];
+try {
+    $lista = $pdo->query(
+        "SELECT usuario FROM intentos_login
+          WHERE exito = 0 AND creado_en > DATE_SUB(NOW(), INTERVAL 15 MINUTE)
+          GROUP BY usuario HAVING COUNT(*) >= 3"
+    )->fetchAll();
+    $stHasta = $pdo->prepare(
+        "SELECT creado_en FROM intentos_login
+          WHERE exito = 0 AND usuario = :u AND creado_en > DATE_SUB(NOW(), INTERVAL 15 MINUTE)
+          ORDER BY creado_en DESC LIMIT 1 OFFSET 2"
+    );
+    foreach ($lista as $l) {
+        $stHasta->execute([':u' => $l['usuario']]);
+        $t = $stHasta->fetchColumn();
+        if ($t) { $bloqueados[$l['usuario']] = date('H:i', strtotime($t) + 15 * 60); }
+    }
+} catch (PDOException $e) { $bloqueados = []; }
 
 /* ---- Sesiones activas (menos de 30 min de inactividad) ---- */
 $sesiones = [];
@@ -139,6 +165,7 @@ require_once __DIR__ . '/includes/layout_top.php';
   <a href="usuarios.php" class="on">Usuarios</a>
   <a href="correo.php">Correo</a>
   <a href="mantenimiento.php">Mantenimiento</a>
+  <a href="backup.php">Backup</a>
 </div>
 
 <?php if ($flashOk): ?>
@@ -172,22 +199,22 @@ require_once __DIR__ . '/includes/layout_top.php';
 
   <div>
     <!-- Filtros -->
-    <div class="filtros-cand">
+    <div class="filtros-cand" data-filtra=".tabla-cand" data-nombre="usuario">
       <div class="filtro-buscar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input type="text" placeholder="Buscar por nombre, email o usuario...">
       </div>
       <div class="filtro-campo"><label>Rol</label>
-        <select><option>Todos</option>
+        <select data-campo="rol"><option value="">Todos</option>
           <?php foreach ($roles as $r): ?><option><?= htmlspecialchars($r['nombre']) ?></option><?php endforeach; ?>
         </select></div>
       <div class="filtro-campo"><label>Estado</label>
-        <select><option>Todos</option><option>Activo</option><option>Inactivo</option></select></div>
-      <button class="btn-filtros">
+        <select data-campo="estado"><option value="">Todos</option><option>Activo</option><option>Inactivo</option><option>Bloqueado</option></select></div>
+      <button class="btn-filtros" type="button">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
         Filtros
       </button>
-      <button class="btn-limpiar">Limpiar</button>
+      <button class="btn-limpiar" type="button">Limpiar</button>
     </div>
 
     <!-- Tabla -->
@@ -209,27 +236,24 @@ require_once __DIR__ . '/includes/layout_top.php';
             $rolC = rolChip($u['rol']);
             $color = colorAvatar($u['usuario']);
             [$fAcc,$hAcc] = fechaAcceso($u['ultimo_acceso']);
-            $esC = (int)$u['estado'] === 1 ? 'es-activo' : 'es-inactivo';
-            $esT = (int)$u['estado'] === 1 ? 'Activo' : 'Inactivo'; ?>
-            <tr>
+            $activoU  = (int)$u['estado'] === 1;
+            $bloqHasta = $bloqueados[$u['usuario']] ?? null;
+            $estT = !$activoU ? 'Inactivo' : ($bloqHasta ? 'Bloqueado' : 'Activo');
+            $esC  = $estT === 'Activo' ? 'es-activo' : ($estT === 'Bloqueado' ? 'es-proceso' : 'es-inactivo');
+            // Email visible = cuenta corporativa; el correo personal (credenciales) solo se ve en la ficha
+            $emailCorp = str_contains((string)$u['usuario'], '@') ? $u['usuario'] : ($u['correo'] ?: $u['usuario']);
+            $nombreJs  = htmlspecialchars(addslashes($u['usuario'])); ?>
+            <tr data-fila data-rol="<?= htmlspecialchars($u['rol']) ?>" data-estado="<?= $estT ?>">
               <td class="col-check"><input type="checkbox"></td>
               <td>
                 <div class="usuario-cel">
                   <span class="cand-avatar" style="background:<?= $color ?>"><?= iniciales($u['nombre']) ?></span>
-                  <span class="txt-cel">
-                    <span class="n"><?= htmlspecialchars($u['nombre']) ?></span>
-                    <span class="c<?= str_contains((string)$u['usuario'], '@') ? '' : ' sin-cuenta' ?>"><?= htmlspecialchars($u['usuario']) ?></span>
-                  </span>
+                  <span class="txt-cel"><span class="n"><?= htmlspecialchars($u['nombre']) ?></span></span>
                 </div>
               </td>
-              <td><?= htmlspecialchars($u['correo'] ?? '—') ?></td>
+              <td class="col-email"><?= htmlspecialchars($emailCorp) ?></td>
               <td><span class="chip <?= $rolC ?>"><?= htmlspecialchars($u['rol']) ?></span></td>
-              <td>
-                <span class="chip <?= $esC ?>"><?= $esT ?></span>
-                <?php if (!empty($u['debe_cambiar_clave'])): ?>
-                  <div style="margin-top:6px"><span class="chip es-inactivo" style="background:#fff4e5;color:#a86a06">Clave regenerada · cambio pendiente</span></div>
-                <?php endif; ?>
-              </td>
+              <td><span class="chip <?= $esC ?>"<?= $bloqHasta ? ' title="Bloqueado hasta las ' . htmlspecialchars($bloqHasta) . '"' : '' ?>><?= $estT ?></span></td>
               <td class="fecha"><?= $fAcc ?><?php if($hAcc): ?><small><?= $hAcc ?></small><?php endif; ?></td>
               <td>
                 <div class="acciones">
@@ -243,53 +267,51 @@ require_once __DIR__ . '/includes/layout_top.php';
                     data-est="<?= (int)$u['estado'] ?>">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></svg>
                   </button>
-                  <button class="icobtn" type="button" aria-label="Ver" title="Ver detalle" onclick="verUsuario(this)"
+                  <button class="icobtn" type="button" aria-label="Ver detalle" title="Ver detalle" onclick="verUsuario(this)"
                     data-nombre="<?= htmlspecialchars($u['nombre'], ENT_QUOTES) ?>"
                     data-usuario="<?= htmlspecialchars($u['usuario'], ENT_QUOTES) ?>"
                     data-correo="<?= htmlspecialchars($u['correo'] ?? '', ENT_QUOTES) ?>"
                     data-rol="<?= htmlspecialchars($u['rol'], ENT_QUOTES) ?>"
                     data-area="<?= htmlspecialchars($u['area'] ?? '', ENT_QUOTES) ?>"
-                    data-est="<?= (int)$u['estado'] === 1 ? 'Activo' : 'Inactivo' ?>"
+                    data-est="<?= $estT ?>"
+                    data-bloqueo="<?= $bloqHasta ? 'Bloqueado por 3 intentos fallidos hasta las ' . htmlspecialchars($bloqHasta) : '' ?>"
                     data-acceso="<?= $fAcc ?><?= $hAcc ? ' · ' . $hAcc : '' ?>"
                     data-2fa="<?= (int)$u['fa2_activo'] === 1 ? 'Sí' : 'No' ?>"
                     data-pendiente="<?= (int)$u['debe_cambiar_clave'] === 1 ? 'Sí' : 'No' ?>">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                   </button>
-                  <div class="con-menu">
-                    <button class="icobtn" type="button" aria-label="Más" title="Más acciones" onclick="toggleMenu(event, this)">
-                      <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>
-                    </button>
-                    <div class="menu-kebab">
-                      <?php if ($puedeAdmin): ?>
-                        <form action="guardar_usuario.php" method="POST" data-ajax="1">
-                          <input type="hidden" name="accion" value="estado">
-                          <input type="hidden" name="usuario_id" value="<?= (int)$u['id'] ?>">
-                          <input type="hidden" name="estado" value="<?= (int)$u['estado'] === 1 ? 0 : 1 ?>">
-                          <button type="submit" class="<?= (int)$u['estado'] === 1 ? 'op-inactivar' : 'op-activar' ?>">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
-                            <?= (int)$u['estado'] === 1 ? 'Desactivar' : 'Activar' ?>
-                          </button>
-                        </form>
-                        <form action="regenerar_clave.php" method="POST" data-ajax="1"
-                              onsubmit="return confirm('Se generará una contraseña temporal para <?= htmlspecialchars(addslashes($u['usuario'])) ?> y deberá cambiarla al iniciar sesión. ¿Continuar?')">
-                          <input type="hidden" name="usuario_id" value="<?= (int)$u['id'] ?>">
-                          <button type="submit" class="op-clave">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><path d="M12 15v2"/></svg>
-                            Regenerar contraseña
-                          </button>
-                        </form>
-                        <form action="guardar_usuario.php" method="POST" data-ajax="1"
-                              onsubmit="return confirm('Se eliminará el usuario <?= htmlspecialchars(addslashes($u['usuario'])) ?>. Esta acción no se puede deshacer. ¿Continuar?')">
-                          <input type="hidden" name="accion" value="eliminar">
-                          <input type="hidden" name="usuario_id" value="<?= (int)$u['id'] ?>">
-                          <button type="submit" class="op-eliminar">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                            Eliminar usuario
-                          </button>
-                        </form>
-                      <?php endif; ?>
-                    </div>
-                  </div>
+                  <?php if ($puedeAdmin): ?>
+                    <form action="guardar_usuario.php" method="POST" data-ajax="1">
+                      <input type="hidden" name="accion" value="estado">
+                      <input type="hidden" name="usuario_id" value="<?= (int)$u['id'] ?>">
+                      <input type="hidden" name="estado" value="<?= $activoU ? 0 : 1 ?>">
+                      <button type="submit" class="icobtn <?= $activoU ? 'i-aviso' : 'i-ok' ?>" aria-label="<?= $activoU ? 'Desactivar' : 'Activar' ?>" title="<?= $activoU ? 'Desactivar usuario' : 'Activar usuario' ?>">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+                      </button>
+                    </form>
+                    <form action="regenerar_clave.php" method="POST" data-ajax="1"
+                          onsubmit="return confirm('Se generará una contraseña temporal para <?= $nombreJs ?> y deberá cambiarla al iniciar sesión. ¿Continuar?')">
+                      <input type="hidden" name="usuario_id" value="<?= (int)$u['id'] ?>">
+                      <button type="submit" class="icobtn" aria-label="Restablecer contraseña" title="Restablecer contraseña">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+                      </button>
+                    </form>
+                    <form action="guardar_usuario.php" method="POST" data-ajax="1"
+                          onsubmit="return confirm('Se eliminará el usuario <?= $nombreJs ?>. Esta acción no se puede deshacer. ¿Continuar?')">
+                      <input type="hidden" name="accion" value="eliminar">
+                      <input type="hidden" name="usuario_id" value="<?= (int)$u['id'] ?>">
+                      <button type="submit" class="icobtn i-peligro" aria-label="Eliminar" title="Eliminar usuario">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                      </button>
+                    </form>
+                    <form action="desbloquear_usuario.php" method="POST" data-ajax="1"
+                          onsubmit="return confirm('¿Desbloquear a <?= $nombreJs ?>? Podrá iniciar sesión de inmediato.')">
+                      <input type="hidden" name="usuario_id" value="<?= (int)$u['id'] ?>">
+                      <button type="submit" class="icobtn i-ok" aria-label="Desbloquear" <?= $bloqHasta ? 'title="Desbloquear usuario"' : 'disabled title="El usuario no está bloqueado"' ?>>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+                      </button>
+                    </form>
+                  <?php endif; ?>
                 </div>
               </td>
             </tr>
@@ -449,6 +471,7 @@ require_once __DIR__ . '/includes/layout_top.php';
       <div class="bit-resumen">
         <span class="chip es-activo"><?= $bitOk ?> exitoso<?= $bitOk === 1 ? '' : 's' ?></span>
         <span class="chip es-inactivo"><?= $bitFail ?> fallido<?= $bitFail === 1 ? '' : 's' ?></span>
+        <?php if ($bitEv): ?><span class="chip es-proceso"><?= $bitEv ?> bloqueo<?= $bitEv === 1 ? '' : 's' ?>/desbloqueo<?= $bitEv === 1 ? '' : 's' ?></span><?php endif; ?>
         <span class="bit-nota">Últimos <?= count($bitacora) ?> registros</span>
       </div>
 
@@ -461,12 +484,22 @@ require_once __DIR__ . '/includes/layout_top.php';
               <tr><th>FECHA Y HORA</th><th>USUARIO</th><th>IP</th><th>RESULTADO</th><th>DETALLE</th></tr>
             </thead>
             <tbody>
-              <?php foreach ($bitacora as $b): $ok = (int)$b['exito'] === 1; ?>
+              <?php foreach ($bitacora as $b):
+                $e = (int)$b['exito'];
+                $ok = $e === 1;
+                if ($e === 2) {
+                    $esDes = str_starts_with((string)$b['detalle'], 'Desbloqueado');
+                    $chipC = $esDes ? 'es-activo' : 'es-proceso';
+                    $chipT = $esDes ? 'Desbloqueo' : 'Bloqueo';
+                } else {
+                    $chipC = $ok ? 'es-activo' : 'es-inactivo';
+                    $chipT = $ok ? 'Éxito' : 'Fallido';
+                } ?>
                 <tr>
                   <td><?= date('d/m/Y H:i', strtotime($b['creado_en'])) ?></td>
                   <td><?= htmlspecialchars($b['usuario']) ?></td>
                   <td><?= htmlspecialchars($b['ip']) ?></td>
-                  <td><span class="chip <?= $ok ? 'es-activo' : 'es-inactivo' ?>"><?= $ok ? 'Éxito' : 'Fallido' ?></span></td>
+                  <td><span class="chip <?= $chipC ?>"><?= $chipT ?></span></td>
                   <td><?= htmlspecialchars($b['detalle']) ?></td>
                 </tr>
               <?php endforeach; ?>
@@ -474,7 +507,7 @@ require_once __DIR__ . '/includes/layout_top.php';
           </table>
         </div>
         <div class="bit-nota" style="margin-top:10px">
-          Los registros se conservan 24 horas. Los fallos de un usuario se limpian automáticamente al iniciar sesión correctamente.
+          Los registros se conservan 24 horas. Al tercer intento fallido el usuario se bloquea 15 minutos (queda registrado como «Bloqueo»); el Administrador puede desbloquearlo desde la lista de usuarios.
         </div>
       <?php endif; ?>
 
@@ -606,7 +639,7 @@ require_once __DIR__ . '/includes/layout_top.php';
         <dd>3 fallos por usuario en 15 minutos (y 10 por IP en 15 minutos). Cada intento queda auditado.</dd>
 
         <dt>Contraseña</dt>
-        <dd>Mínimo 6 caracteres, con al menos una letra y un número. Guardadas con bcrypt (coste 12).</dd>
+        <dd>Mínimo 10 caracteres, con mayúscula, minúscula, número y un carácter especial. Guardadas con bcrypt (coste 12).</dd>
 
         <dt>Clave regenerada</dt>
         <dd>El administrador genera una temporal y el usuario debe cambiarla antes de usar el sistema.</dd>
@@ -765,15 +798,17 @@ function verUsuario(btn){
   const d = btn.dataset;
   document.getElementById('vAvatar').textContent = inicialesDe(d.nombre);
   document.getElementById('vNombre').textContent = d.nombre;
-  document.getElementById('vUsuario').textContent = d.usuario;
+  document.getElementById('vUsuario').textContent = d.rol;
+  const pend = d.pendiente === 'Sí';
   const filas = [
-    ['Correo personal', d.correo || '—'],
+    ['Cuenta corporativa', d.usuario || '—'],
+    ['Correo personal (envío de credenciales)', d.correo || '—'],
     ['Rol', d.rol],
     ['Área', d.area || 'Sin área (todas)'],
-    ['Estado', d.est],
+    ['Estado', d.est + (d.bloqueo ? ' · ' + d.bloqueo : '')],
+    ['Contraseña', pend ? 'Temporal (clave regenerada): debe cambiarla al iniciar sesión' : 'Definida por el usuario'],
     ['Último acceso', d.acceso],
-    ['Verificación en dos pasos', d['2fa']],
-    ['Clave regenerada', d.pendiente === 'Sí' ? 'Sí · cambio obligatorio al iniciar' : 'No']
+    ['Verificación en dos pasos', d['2fa']]
   ];
   document.getElementById('vDatos').innerHTML = filas.map(f =>
     '<dt>' + f[0] + '</dt><dd>' + f[1] + '</dd>').join('');
@@ -808,28 +843,32 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') { cerrarMenu
 
 /* ---- Formularios con envío AJAX (modal, activar/desactivar,
         regenerar contraseña, eliminar): todo responde con toast ---- */
-document.querySelectorAll('form[data-ajax="1"]').forEach(frm => {
-  frm.addEventListener('submit', async function(ev){
-    if (ev.defaultPrevented) return;                 // confirm() cancelado
-    ev.preventDefault();
-    if (frm.dataset.enviando === '1') return;         // evita doble envío
-    frm.dataset.enviando = '1';
-    const btn = frm.querySelector('[type="submit"]');
-    const htmlBtn = btn ? btn.innerHTML : '';
-    if (btn){ btn.disabled = true; btn.innerHTML = 'Guardando...'; }
-    const datos = await enviarFormAjax(frm);
-    if (btn){ btn.disabled = false; btn.innerHTML = htmlBtn; }
-    frm.dataset.enviando = '';
-    if (datos && datos.ok){
-      if (frm.closest('#modalUsuario')) cerrarModal('modalUsuario');
-      cerrarMenus();
-      await refrescarTablaUsuarios();
-      mostrarToast(datos.mensaje, 'ok');
-    } else {
-      mostrarToast((datos && datos.mensaje) || 'No se pudo completar la acción.', 'error');
-    }
-  });
+document.addEventListener('submit', async function(ev){
+  const frm = ev.target.closest ? ev.target.closest('form[data-ajax="1"]') : null;
+  if (!frm) return;
+  if (ev.defaultPrevented) return;                 // confirm() cancelado
+  ev.preventDefault();
+  if (frm.dataset.enviando === '1') return;         // evita doble envío
+  frm.dataset.enviando = '1';
+  const btn = frm.querySelector('[type="submit"]');
+  const esIcono = btn && btn.classList.contains('icobtn');
+  const htmlBtn = btn ? btn.innerHTML : '';
+  if (btn){ btn.disabled = true; if (!esIcono) btn.innerHTML = 'Guardando...'; }
+  const datos = await enviarFormAjax(frm);
+  if (btn && !esIcono){ btn.disabled = false; btn.innerHTML = htmlBtn; }
+  frm.dataset.enviando = '';
+  if (datos && datos.ok){
+    if (frm.closest('#modalUsuario')) cerrarModal('modalUsuario');
+    cerrarMenus();
+    await refrescarTablaUsuarios();
+    mostrarToast(datos.mensaje, 'ok');
+  } else {
+    if (btn && esIcono) btn.disabled = false;
+    mostrarToast((datos && datos.mensaje) || 'No se pudo completar la acción.', 'error');
+  }
 });
+
 </script>
 
+<script src="assets/js/filtros.js"></script>
 <?php require_once __DIR__ . '/includes/layout_bottom.php'; ?>

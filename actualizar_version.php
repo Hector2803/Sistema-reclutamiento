@@ -24,7 +24,7 @@ if (!class_exists('ZipArchive')) {
 }
 
 $version = trim($_POST['version'] ?? '');
-$descr   = trim($_POST['descripcion'] ?? '');
+$descr   = mb_substr(trim($_POST['descripcion'] ?? ''), 0, 255);
 
 // 1) Validaciones
 if (!preg_match('/^[0-9]+\.[0-9]+\.[0-9]+$/', $version)) {

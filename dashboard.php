@@ -16,12 +16,14 @@ $descart    = (int)$pdo->query("SELECT COUNT(*) c FROM postulaciones WHERE estad
 $tasaAprob  = $totalPost ? round($selec * 100 / $totalPost, 1) : 0;
 $tasaCaida  = $totalPost ? round($descart * 100 / $totalPost, 1) : 0;
 
+$verReq = !alcanceEsReclutador();   // el Reclutador no ve requerimientos/vacantes
 $kpis = [
     ['titulo'=>'Vacantes Activas',      'valor'=>(string)$vacTotales, 'sub'=>'Requerimientos abiertos', 'color'=>'azul'],
     ['titulo'=>'Candidatos en Proceso', 'valor'=>(string)$enProceso,  'sub'=>'En el embudo',           'color'=>'azul'],
     ['titulo'=>'Tasa de Selección',     'valor'=>$tasaAprob.'%',      'sub'=>'Seleccionados',          'color'=>'verde'],
     ['titulo'=>'Tasa de Descarte',      'valor'=>$tasaCaida.'%',      'sub'=>'Candidatos descartados', 'color'=>'rojo'],
 ];
+if (!$verReq) array_shift($kpis);   // quita «Vacantes Activas»
 
 /* ---- Actividad reciente (desde el historial de etapas) ---- */
 $actividad = [];
@@ -51,6 +53,7 @@ foreach ($rows as $r) {
 
 /* ---- Vacantes recientes (con conteo de candidatos) ---- */
 $vacantes = [];
+$totalVac = (int)$pdo->query("SELECT COUNT(*) FROM campanas c WHERE 1=1" . sqlAlcanceCampana('c.area_id'))->fetchColumn();
 $vr = $pdo->query(
     "SELECT c.puesto, c.prioridad, c.estado, a.nombre AS area,
             (SELECT COUNT(*) FROM postulaciones p WHERE p.campana_id=c.id) AS cand
@@ -72,10 +75,12 @@ require_once __DIR__ . '/includes/layout_top.php';
     <p>Monitorea el estado de tus procesos de reclutamiento en tiempo real.</p>
   </div>
   <div class="acciones-panel">
+    <?php if ($verReq): ?>
     <a class="btn btn-rojo" href="requerimientos.php">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       Nuevo Requerimiento
     </a>
+    <?php endif; ?>
     <a class="btn btn-azul" href="candidatos.php">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
       Registrar Candidato
@@ -84,7 +89,7 @@ require_once __DIR__ . '/includes/layout_top.php';
 </div>
 
 <!-- ===== Tarjetas KPI ===== -->
-<div class="grid-kpis">
+<div class="grid-kpis"<?= $verReq ? '' : ' style="grid-template-columns:repeat(3,1fr)"' ?>>
   <?php foreach ($kpis as $k): ?>
     <div class="kpi">
       <div class="kpi-top">
@@ -108,16 +113,17 @@ require_once __DIR__ . '/includes/layout_top.php';
 </div>
 
 <!-- ===== Fila: Vacantes recientes + Actividad reciente ===== -->
-<div class="grid-medio">
+<div class="grid-medio"<?= $verReq ? '' : ' style="grid-template-columns:minmax(0,1fr)"' ?>>
 
   <!-- Vacantes recientes -->
+  <?php if ($verReq): ?>
   <section class="tarjeta vacantes">
     <div class="tarjeta-cabecera">
       <h3>Vacantes Recientes</h3>
       <a href="requerimientos.php" class="ver-todas">Ver todas</a>
     </div>
 
-    <table class="tabla">
+    <table class="tabla tabla-cards">
       <thead>
         <tr>
           <th>Puesto</th><th>Cliente</th><th>Candidatos</th>
@@ -131,8 +137,8 @@ require_once __DIR__ . '/includes/layout_top.php';
         <?php foreach ($vacantes as $v): ?>
           <tr>
             <td class="td-puesto"><?= htmlspecialchars($v['puesto']) ?></td>
-            <td><?= htmlspecialchars($v['cliente']) ?></td>
-            <td><?= $v['cand'] ?></td>
+            <td class="td-cliente"><?= htmlspecialchars($v['cliente']) ?></td>
+            <td class="td-cand"><?= $v['cand'] ?></td>
             <td><span class="chip-etapa"><?= htmlspecialchars($v['etapa']) ?></span></td>
             <td><span class="chip-prio <?= strtolower($v['prio']) ?>"><?= $v['prio'] ?></span></td>
             <td><span class="chip-estado"><?= htmlspecialchars($v['estado']) ?></span></td>
@@ -145,16 +151,12 @@ require_once __DIR__ . '/includes/layout_top.php';
     </table>
 
     <div class="tabla-pie">
-      <span>Mostrando 1 a 5 de 12 vacantes</span>
-      <div class="paginacion">
-        <button class="pag" aria-label="Anterior">‹</button>
-        <button class="pag activa">1</button>
-        <button class="pag">2</button>
-        <button class="pag">3</button>
-        <button class="pag" aria-label="Siguiente">›</button>
-      </div>
+      <span>Mostrando <?= count($vacantes) ?> de <?= $totalVac ?> vacante<?= $totalVac === 1 ? '' : 's' ?></span>
+      <a href="requerimientos.php" class="ver-todas">Ver todas →</a>
     </div>
   </section>
+
+  <?php endif; ?>
 
   <!-- Actividad reciente -->
   <section class="tarjeta actividad">

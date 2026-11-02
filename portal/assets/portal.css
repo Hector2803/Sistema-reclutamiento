@@ -169,3 +169,11 @@ svg{display:block}
   .nav-links{display:none}
   .hero h1{font-size:30px}
 }
+
+/* ---------- Portal público, móvil ---------- */
+@media (max-width:560px){
+  .hero-buscar{flex-direction:column;align-items:stretch;gap:8px}
+  .hero-buscar input{width:100%;min-width:0}
+  .hero-buscar .btn{width:100%;justify-content:center}
+}
+.aviso-campo{background:#eef4ff;border:1px solid #cfdcf3;border-radius:10px;padding:12px 14px;font-size:13.5px;color:#27406e;line-height:1.5;margin-bottom:16px}

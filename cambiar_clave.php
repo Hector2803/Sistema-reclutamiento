@@ -90,19 +90,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div class="reglas">
       <strong>La contraseña debe:</strong>
-      <br>Tener al menos <strong>6 caracteres</strong>.
-      <br>Incluir <strong>una letra</strong> y <strong>un número</strong>.
-      <br>Ser distinta de la actual.
+      <ul id="lista-reglas" style="list-style:none;padding:0;margin:6px 0 0">
+        <li data-r="len">○ Mínimo <strong>10 caracteres</strong></li>
+        <li data-r="may">○ Una <strong>mayúscula</strong></li>
+        <li data-r="min">○ Una <strong>minúscula</strong></li>
+        <li data-r="num">○ Un <strong>número</strong></li>
+        <li data-r="esp">○ Un <strong>carácter especial</strong> (! @ # $ % & * ?)</li>
+        <li data-r="igual">○ Las dos contraseñas coinciden</li>
+      </ul>
+      Debe ser distinta de la actual.
     </div>
 
     <form method="POST">
       <div class="campo-clave">
         <label for="clave_nueva">Nueva contraseña</label>
-        <input type="password" id="clave_nueva" name="clave_nueva" required minlength="6" maxlength="100" autofocus>
+        <input type="password" id="clave_nueva" name="clave_nueva" required minlength="10" maxlength="100" autofocus autocomplete="new-password">
       </div>
       <div class="campo-clave">
         <label for="clave_repite">Repite la nueva contraseña</label>
-        <input type="password" id="clave_repite" name="clave_repite" required minlength="6" maxlength="100">
+        <input type="password" id="clave_repite" name="clave_repite" required minlength="10" maxlength="100" autocomplete="new-password">
       </div>
       <button class="btn-guardar" type="submit">Guardar contraseña</button>
     </form>
@@ -112,5 +118,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php endif; ?>
     <a class="salir" href="logout.php">Cerrar sesión</a>
   </div>
+<script>
+(function(){
+  var a=document.getElementById('clave_nueva'), b=document.getElementById('clave_repite');
+  function marca(k,ok){var li=document.querySelector('[data-r="'+k+'"]');
+    li.style.color=ok?'#15803d':'#3d4a63'; li.firstChild.nodeValue=(ok?'✔ ':'○ ')+li.firstChild.nodeValue.slice(2);}
+  function eval_(){var v=a.value;
+    marca('len',v.length>=10);marca('may',/[A-Z]/.test(v));marca('min',/[a-z]/.test(v));
+    marca('num',/[0-9]/.test(v));marca('esp',/[^A-Za-z0-9]/.test(v));marca('igual',v!==''&&v===b.value);}
+  a.addEventListener('input',eval_);b.addEventListener('input',eval_);
+  document.querySelector('form').addEventListener('submit',function(e){
+    var v=a.value;if(v.length<10||!/[A-Z]/.test(v)||!/[a-z]/.test(v)||!/[0-9]/.test(v)||!/[^A-Za-z0-9]/.test(v)||v!==b.value){e.preventDefault();eval_();alert('La contraseña no cumple todos los requisitos.');}});
+})();
+</script>
 </body>
 </html>

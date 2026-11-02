@@ -26,14 +26,15 @@ $ip      = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
 
 /**
  * Registra el resultado de un intento en la tabla de auditoría.
+ * $tipo: 0 = fallo, 1 = éxito, 2 = evento de seguridad (bloqueo o desbloqueo).
  * No interrumpe el login si la tabla falla.
  */
-function registrarIntento(PDO $pdo, string $usuario, string $ip, bool $exito, ?string $detalle = null): void
+function registrarIntento(PDO $pdo, string $usuario, string $ip, int $tipo, ?string $detalle = null): void
 {
     try {
         $pdo->prepare("INSERT INTO intentos_login (usuario, ip, exito, detalle)
                        VALUES (:u, :ip, :e, :d)")
-            ->execute([':u' => mb_substr($usuario, 0, 50), ':ip' => $ip, ':e' => $exito ? 1 : 0, ':d' => $detalle]);
+            ->execute([':u' => mb_substr($usuario, 0, 50), ':ip' => $ip, ':e' => $tipo, ':d' => $detalle]);
     } catch (PDOException $e) { /* auditoría no crítica */ }
 }
 
@@ -79,7 +80,8 @@ try {
     $fallosIp      = contarFallos($pdo, 'ip', $ip, 15);
 
     if ($fallosUsuario >= 3) {
-        errorLogin('Demasiados intentos fallidos para este usuario. Espera 15 minutos y vuelve a intentarlo.', $usuario);
+        registrarIntento($pdo, $usuario, $ip, 2, 'Intento rechazado: usuario bloqueado');
+        errorLogin('Demasiados intentos fallidos para este usuario. Espera 15 minutos o pide al administrador que desbloquee tu cuenta.', $usuario);
     }
     if ($fallosIp >= 10) {
         errorLogin('Demasiados intentos fallidos desde esta conexión. Espera 15 minutos y vuelve a intentarlo.', $usuario);
@@ -106,12 +108,12 @@ try {
     if ($claveOk) {
         // CP-09: la cuenta debe estar activa.
         if ((int)$fila['estado'] !== 1) {
-            registrarIntento($pdo, $usuario, $ip, false, 'cuenta inactiva');
+            registrarIntento($pdo, $usuario, $ip, 0, 'cuenta inactiva');
             errorLogin('Tu cuenta está inactiva. Contacta al administrador.', $usuario);
         }
 
         // Éxito: se limpian los fallos previos y se audita el acceso.
-        registrarIntento($pdo, $usuario, $ip, true, 'password correcto');
+        registrarIntento($pdo, $usuario, $ip, 1, 'password correcto');
         try {
             $pdo->prepare("DELETE FROM intentos_login WHERE exito = 0 AND usuario = :u")
                 ->execute([':u' => mb_substr($usuario, 0, 50)]);
@@ -134,13 +136,16 @@ try {
     }
 
     /* ---------------- Credenciales incorrectas ---------------- */
-    registrarIntento($pdo, $usuario, $ip, false, $fila ? 'clave incorrecta' : 'usuario inexistente');
+    registrarIntento($pdo, $usuario, $ip, 0, $fila ? 'clave incorrecta' : 'usuario inexistente');
+    if ($fallosUsuario + 1 === 3) {
+        registrarIntento($pdo, $usuario, $ip, 2, 'Usuario bloqueado por 3 intentos fallidos (15 min)');
+    }
     usleep(500000);   // 0,5 s de pausa: dificulta la prueba automática
 
     $fallosRestantes = 3 - ($fallosUsuario + 1);
     $msg = 'Usuario o contraseña incorrectos.';
     if ($fallosRestantes <= 0) {
-        $msg = 'Usuario o contraseña incorrectos. Superaste el límite de intentos: espera 15 minutos.';
+        $msg = 'Usuario o contraseña incorrectos. Superaste el límite de intentos: espera 15 minutos o pide al administrador que desbloquee tu cuenta.';
     }
     errorLogin($msg, $usuario);
 

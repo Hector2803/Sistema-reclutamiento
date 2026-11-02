@@ -90,6 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div class="reglas">
       <strong>La contraseña debe:</strong>
+<<<<<<< HEAD
       <ul id="lista-reglas" style="list-style:none;padding:0;margin:6px 0 0">
         <li data-r="len">○ Mínimo <strong>10 caracteres</strong></li>
         <li data-r="may">○ Una <strong>mayúscula</strong></li>
@@ -99,16 +100,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <li data-r="igual">○ Las dos contraseñas coinciden</li>
       </ul>
       Debe ser distinta de la actual.
+=======
+      <br>Tener al menos <strong>10 caracteres</strong>.
+      <br>Incluir <strong>una letra</strong> y <strong>un número</strong>.
+      <br>Ser distinta de la actual.
+>>>>>>> 30acee656d1141514aaa49c6c7dd6ecc9de7636e
     </div>
 
     <form method="POST">
       <div class="campo-clave">
         <label for="clave_nueva">Nueva contraseña</label>
+<<<<<<< HEAD
         <input type="password" id="clave_nueva" name="clave_nueva" required minlength="10" maxlength="100" autofocus autocomplete="new-password">
       </div>
       <div class="campo-clave">
         <label for="clave_repite">Repite la nueva contraseña</label>
         <input type="password" id="clave_repite" name="clave_repite" required minlength="10" maxlength="100" autocomplete="new-password">
+=======
+        <input type="password" id="clave_nueva" name="clave_nueva" required minlength="10" maxlength="100" autofocus>
+      </div>
+      <div class="campo-clave">
+        <label for="clave_repite">Repite la nueva contraseña</label>
+        <input type="password" id="clave_repite" name="clave_repite" required minlength="10" maxlength="100">
+>>>>>>> 30acee656d1141514aaa49c6c7dd6ecc9de7636e
       </div>
       <button class="btn-guardar" type="submit">Guardar contraseña</button>
     </form>

@@ -1,10 +1,5 @@
     </main>
 
-    <!-- Pie de página (SOL-INF-002): dentro de .contenido, al final de la columna -->
-    <style>@media(max-width:900px){.pie-sistema{padding-bottom:84px}}</style>
-    <footer class="pie-sistema" style="text-align:center;padding:18px 0;color:#666;font-size:.9rem;border-top:1px solid #eaeaea;margin-top:auto;">
-      SSR A365 v1.0.1 &middot; Soporte: soporte@a365.com
-    </footer>
   </div><!-- /contenido -->
 
   <!-- ================= BARRA INFERIOR (solo móvil) ================= -->

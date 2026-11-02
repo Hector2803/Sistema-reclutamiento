@@ -639,11 +639,7 @@ require_once __DIR__ . '/includes/layout_top.php';
         <dd>3 fallos por usuario en 15 minutos (y 10 por IP en 15 minutos). Cada intento queda auditado.</dd>
 
         <dt>Contraseña</dt>
-<<<<<<< HEAD
         <dd>Mínimo 10 caracteres, con mayúscula, minúscula, número y un carácter especial. Guardadas con bcrypt (coste 12).</dd>
-=======
-        <dd>Mínimo 10 caracteres, con al menos una letra y un número. Guardadas con bcrypt (coste 12).</dd>
->>>>>>> 30acee656d1141514aaa49c6c7dd6ecc9de7636e
 
         <dt>Clave regenerada</dt>
         <dd>El administrador genera una temporal y el usuario debe cambiarla antes de usar el sistema.</dd>

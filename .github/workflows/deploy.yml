@@ -1,0 +1,32 @@
+name: Desplegar al hosting
+ 
+# Se ejecuta solo en cada push a main, y también se puede lanzar a mano
+# desde la pestaña Actions (botón "Run workflow").
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+ 
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v4
+ 
+      - name: Subir al hosting por FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftp
+          port: 21
+          server-dir: /htdocs/
+          exclude: |
+            **/.git*
+            **/.git*/**
+            .github/**
+            config/conexion.php
+            uploads/**
+            backups/**

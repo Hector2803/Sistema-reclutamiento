@@ -1,8 +1,8 @@
 </main>
   </div><!-- /contenido -->
 
-  <!-- Pie de página al final del body pero antes de las etiquetas de cierre -->
-  <footer style="text-align: center; padding: 20px 0; color: #666; font-size: 0.9rem; border-top: 1px solid #eaeaea; margin-top: auto; width: 100%;">
+  <!-- Pie de página oficial -->
+  <footer style="text-align: center; padding: 15px 0; color: #666; font-size: 0.9rem; border-top: 1px solid #eaeaea; margin-top: auto; width: 100%;">
     SSR A365 v1.0.1 &middot; Soporte: soporte@a365.com
   </footer>
 

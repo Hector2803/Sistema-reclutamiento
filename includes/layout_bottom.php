@@ -20,4 +20,7 @@
   }
 </script>
 </body>
+<footer>
+  SSR A365 v1.0.1 · Soporte: soporte@a365.com
+</footer>
 </html>

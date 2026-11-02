@@ -105,6 +105,11 @@ if (isset($_GET['cerrada']) && $error === '') {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
         Acceso seguro y confidencial
       </div>
+
+        <footer style="text-align: center; padding: 12px 0; color: #666; font-size: 0.8rem; margin-top: 15px; border-top: 1px solid #f0f0f0; width: 100%;">
+        SSR A365 v1.0.1 &middot; Soporte: soporte@a365.com
+      </footer>
+        
     </section>
 
   </div>

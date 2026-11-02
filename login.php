@@ -117,10 +117,9 @@ if (isset($_GET['cerrada']) && $error === '') {
       const oculto = inputClave.type === 'password';
       inputClave.type = oculto ? 'text' : 'password';
     });
-  </script>
-  <footer style="text-align: center; padding: 15px 0; color: #666; font-size: 0.85rem; margin-top: 20px; width: 100%;">
+  <footer style="text-align: center; padding: 15px 0; color: #666; font-size: 0.8rem; margin-top: 20px; border-top: 1px solid #f0f0f0; width: 100%;">
   SSR A365 v1.0.1 &middot; Soporte: soporte@a365.com
-  </footer>
+</footer>
 
 </body>
 </html>

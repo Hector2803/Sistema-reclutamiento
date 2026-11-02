@@ -7,7 +7,13 @@ require_once __DIR__ . '/includes/guardia.php';
 require_once __DIR__ . '/config/conexion.php';
 require_once __DIR__ . '/includes/correo.php';
 
-// Solo el Administrador entra a este módulo
+// SOL-ACC-002: el Supervisor ve una vista reducida (solo desbloquear cuentas de SU área)
+if (($_SESSION['usuario_rol'] ?? '') === 'Supervisor') {
+    require __DIR__ . '/includes/desbloqueo_supervisor.php';
+    exit;
+}
+
+// Solo el Administrador entra al resto de este módulo
 if (($_SESSION['usuario_rol'] ?? '') !== 'Administrador') {
     header('Location: dashboard.php'); exit;
 }
